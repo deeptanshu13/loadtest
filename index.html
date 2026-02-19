@@ -6,591 +6,506 @@
 <title>Locust Load Test Analysis</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,600;0,9..144,700;1,9..144,300&family=DM+Sans:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,600;1,9..144,300&family=DM+Sans:wght@400;500;600&display=swap');
+:root{
+  --bg:#f7f6f2;--surf:#fff;--surf2:#f2f0eb;--bord:#e2dfd6;--bord2:#ccc9bf;
+  --ink:#1a1814;--ink2:#4a4740;--ink3:#7a7570;
+  --c1:#c94040;--c2:#2a8f7f;--c3:#b07820;--crown:#9a6e10;--green:#2a7a50;
+  --mono:'DM Mono',monospace;--disp:'Fraunces',serif;--body:'DM Sans',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:14px;line-height:1.55;max-width:1300px;margin:0 auto;padding:0 0 60px}
 
-  :root {
-    --bg:       #f7f6f2;
-    --surface:  #ffffff;
-    --surface2: #f2f0eb;
-    --border:   #e2dfd6;
-    --border2:  #ccc9bf;
-    --ink:      #1a1814;
-    --ink2:     #4a4740;
-    --ink3:     #7a7570;
-    --c1:       #c94040;   /* red  — FALSE config */
-    --c2:       #2a8f7f;   /* teal — TRUE W1     */
-    --c3:       #b07820;   /* amber— TRUE W4      */
-    --crown:    #9a6e10;
-    --green:    #2a7a50;
-    --accent:   #3a5fc8;
-    --mono:     'DM Mono', monospace;
-    --display:  'Fraunces', serif;
-    --body:     'DM Sans', sans-serif;
-  }
+/* Hero */
+.hero{padding:44px 48px 36px;background:var(--ink);position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 60% 80% at 90% 50%,rgba(42,143,127,.18),transparent 70%),radial-gradient(ellipse 40% 60% at 10% 80%,rgba(58,95,200,.12),transparent 60%)}
+.hi{position:relative;z-index:1}
+.htag{display:inline-block;font-family:var(--mono);font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--c2);background:rgba(42,143,127,.15);border:1px solid rgba(42,143,127,.3);padding:4px 10px;border-radius:3px;margin-bottom:14px}
+.hero h1{font-family:var(--disp);font-size:32px;font-weight:300;color:#f0ede6;line-height:1.15;margin-bottom:10px}
+.hero h1 em{font-style:italic;color:#a8d8d0}
+.hmeta{display:flex;gap:20px;flex-wrap:wrap;margin-top:18px;align-items:flex-end}
+.hst .val{font-family:var(--mono);font-size:20px;font-weight:500;color:#f0ede6}
+.hst .lbl{font-size:11px;font-family:var(--mono);color:#8a8680;letter-spacing:.5px;margin-top:2px}
+.hdiv{width:1px;background:rgba(255,255,255,.1);align-self:stretch}
+.hleg{display:flex;gap:16px;flex-wrap:wrap;margin-left:auto}
+.hli{display:flex;align-items:center;gap:7px;font-size:12px;font-family:var(--mono);color:#9a9690}
+.hld{width:8px;height:8px;border-radius:50%}
 
-  * { box-sizing: border-box; margin: 0; padding: 0; }
+/* Nav */
+.nwrap{background:var(--surf);border-bottom:1px solid var(--bord);position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,.05)}
+.nbar{display:flex;padding:0 48px;overflow-x:auto}
+.nbtn{padding:13px 15px;font-size:13px;font-family:var(--body);font-weight:500;background:none;border:none;cursor:pointer;color:var(--ink3);border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .15s;white-space:nowrap}
+.nbtn.active{color:var(--ink);border-bottom-color:var(--c2)}
+.nbtn:hover{color:var(--ink2)}
 
-  body {
-    background: var(--bg);
-    color: var(--ink);
-    font-family: var(--body);
-    font-size: 14px;
-    line-height: 1.55;
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 0 0 60px;
-  }
+/* Layout */
+.main{padding:30px 48px;display:flex;flex-direction:column;gap:28px}
+.sp{display:none;flex-direction:column;gap:26px}
+.sp.active{display:flex}
+@keyframes fu{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.sp.active>*{animation:fu .28s ease forwards;opacity:0}
+.sp.active>*:nth-child(1){animation-delay:0s}
+.sp.active>*:nth-child(2){animation-delay:.06s}
+.sp.active>*:nth-child(3){animation-delay:.12s}
+.sp.active>*:nth-child(4){animation-delay:.18s}
+.sp.active>*:nth-child(5){animation-delay:.22s}
+.sp.active>*:nth-child(6){animation-delay:.26s}
 
-  /* ── Hero header ── */
-  .hero {
-    padding: 48px 48px 40px;
-    background: var(--ink);
-    position: relative;
-    overflow: hidden;
-  }
-  .hero::before {
-    content: '';
-    position: absolute; inset: 0;
-    background:
-      radial-gradient(ellipse 60% 80% at 90% 50%, rgba(42,143,127,0.18) 0%, transparent 70%),
-      radial-gradient(ellipse 40% 60% at 10% 80%, rgba(58,95,200,0.12) 0%, transparent 60%);
-  }
-  .hero-inner { position: relative; z-index: 1; }
-  .hero-tag {
-    display: inline-block; font-family: var(--mono); font-size: 11px; font-weight: 500;
-    letter-spacing: 1.5px; text-transform: uppercase; color: var(--c2);
-    background: rgba(42,143,127,0.15); border: 1px solid rgba(42,143,127,0.3);
-    padding: 4px 10px; border-radius: 3px; margin-bottom: 16px;
-  }
-  .hero h1 {
-    font-family: var(--display); font-size: 36px; font-weight: 300;
-    color: #f0ede6; line-height: 1.15; letter-spacing: -0.5px; margin-bottom: 12px;
-  }
-  .hero h1 em { font-style: italic; color: #a8d8d0; font-weight: 300; }
-  .hero-meta { display: flex; gap: 28px; flex-wrap: wrap; margin-top: 20px; }
-  .hero-stat { }
-  .hero-stat .val { font-family: var(--mono); font-size: 22px; font-weight: 500; color: #f0ede6; }
-  .hero-stat .lbl { font-size: 11px; font-family: var(--mono); color: #8a8680; letter-spacing: 0.5px; margin-top: 2px; }
-  .hero-divider { width: 1px; background: rgba(255,255,255,0.1); }
-  .hero-legend { display: flex; gap: 20px; flex-wrap: wrap; margin-left: auto; align-self: flex-end; }
-  .hero-legend-item { display: flex; align-items: center; gap: 7px; font-size: 12px; font-family: var(--mono); color: #9a9690; }
-  .hero-legend-dot { width: 8px; height: 8px; border-radius: 50%; }
+/* Labels */
+.lbl{font-size:11px;font-family:var(--mono);font-weight:500;letter-spacing:2px;text-transform:uppercase;color:var(--ink3);margin-bottom:12px;display:flex;align-items:center;gap:10px}
+.lbl::after{content:'';flex:1;height:1px;background:var(--bord)}
 
-  /* ── Nav ── */
-  .nav-wrap {
-    background: var(--surface);
-    border-bottom: 1px solid var(--border);
-    position: sticky; top: 0; z-index: 100;
-    box-shadow: 0 1px 0 var(--border), 0 2px 8px rgba(0,0,0,0.05);
-  }
-  .nav-bar { display: flex; padding: 0 48px; gap: 0; overflow-x: auto; }
-  .nav-btn {
-    padding: 14px 20px; font-size: 13px; font-family: var(--body); font-weight: 500;
-    background: none; border: none; cursor: pointer; color: var(--ink3);
-    border-bottom: 2px solid transparent; margin-bottom: -1px;
-    transition: all 0.15s; white-space: nowrap; letter-spacing: 0.1px;
-  }
-  .nav-btn.active { color: var(--ink); border-bottom-color: var(--c2); }
-  .nav-btn:hover { color: var(--ink2); }
+/* Callouts */
+.cos{display:flex;gap:1px;background:var(--bord);border-radius:10px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.co{flex:1;background:var(--surf);padding:16px 18px;text-align:center}
+.co .big{font-family:var(--disp);font-size:26px;font-weight:600;color:var(--ink);line-height:1;margin-bottom:3px}
+.co .big.up{color:var(--green)} .co .big.dn{color:var(--c1)}
+.co .sub{font-size:11px;font-family:var(--mono);color:var(--ink3)}
 
-  /* ── Main ── */
-  .main { padding: 36px 48px; display: flex; flex-direction: column; gap: 40px; }
-  .section-panel { display: none; flex-direction: column; gap: 36px; }
-  .section-panel.active { display: flex; }
+/* Cards */
+.cards3{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--bord);border-radius:10px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.card{background:var(--surf);padding:20px}
+.ct{font-size:12px;font-family:var(--mono);font-weight:500;margin-bottom:2px}
+.cs{font-size:11px;font-family:var(--mono);color:var(--ink3);margin-bottom:14px}
+.sr{display:flex;justify-content:space-between;align-items:baseline;padding:5px 0;border-bottom:1px solid var(--bord);font-size:12px}
+.sr:last-child{border-bottom:none}
+.sk{color:var(--ink3);font-family:var(--mono)} .sv{font-family:var(--mono);font-weight:600;font-size:12px}
+.g{color:var(--green)} .w{color:var(--c3)} .b{color:var(--c1)}
 
-  /* ── Section labels ── */
-  .label {
-    font-size: 11px; font-family: var(--mono); font-weight: 500;
-    letter-spacing: 2px; text-transform: uppercase; color: var(--ink3);
-    margin-bottom: 16px; display: flex; align-items: center; gap: 12px;
-  }
-  .label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+/* Charts */
+.ch2{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--bord);border-radius:10px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.cc{background:var(--surf);padding:20px}
+.cc h3{font-size:11px;font-family:var(--mono);font-weight:500;color:var(--ink3);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px}
+.cw{position:relative;height:190px}
 
-  /* ── Cards grid ── */
-  .cards3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--border); border-radius: 10px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
-  .card { background: var(--surface); padding: 24px; }
-  .card-title { font-size: 12px; font-family: var(--mono); font-weight: 500; margin-bottom: 3px; }
-  .card-sub { font-size: 11px; font-family: var(--mono); color: var(--ink3); margin-bottom: 18px; }
-  .stat-row { display: flex; justify-content: space-between; align-items: baseline; padding: 7px 0; border-bottom: 1px solid var(--border); font-size: 12px; }
-  .stat-row:last-child { border-bottom: none; }
-  .stat-k { color: var(--ink3); font-family: var(--mono); }
-  .stat-v { font-family: var(--mono); font-weight: 600; font-size: 12px; }
-  .g { color: var(--green); }
-  .w { color: var(--c3); }
-  .b { color: var(--c1); }
+/* Tables */
+.tw{background:var(--surf);border-radius:10px;overflow:hidden;border:1px solid var(--bord);box-shadow:0 1px 4px rgba(0,0,0,.06)}
+table{width:100%;border-collapse:collapse;font-size:12px;font-family:var(--mono)}
+th{text-align:left;color:var(--ink3);font-weight:500;padding:8px 12px;border-bottom:1px solid var(--bord);font-size:11px;background:var(--surf2)}
+td{padding:8px 12px;border-bottom:1px solid rgba(226,223,214,.6);color:var(--ink2);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#faf9f5}
+td.num{text-align:right}
+td.g{color:var(--green);font-weight:600} td.w{color:var(--c3);font-weight:600} td.b{color:var(--c1);font-weight:600}
 
-  /* ── Charts ── */
-  .charts2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--border); border-radius: 10px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
-  .chart-card { background: var(--surface); padding: 24px; }
-  .chart-card h3 { font-size: 11px; font-family: var(--mono); font-weight: 500; color: var(--ink3); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 16px; }
-  .chart-wrap { position: relative; height: 210px; }
+/* Heatmap */
+.hms{background:var(--surf);border-radius:10px;border:1px solid var(--bord);overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.hmh{padding:14px 20px 10px;border-bottom:1px solid var(--bord);display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.hmh h3{font-size:13px;font-weight:600;color:var(--ink);font-family:var(--body)}
+.hmh .sub{font-size:11px;font-family:var(--mono);color:var(--ink3)}
+.hmleg{display:flex;align-items:center;gap:8px;font-size:11px;font-family:var(--mono);color:var(--ink3);padding:8px 20px 10px}
+.hmleg-bar{width:100px;height:8px;border-radius:3px;flex-shrink:0}
+.hm-inner{padding:0 20px 16px;overflow-x:auto}
+.hmt{border-collapse:separate;border-spacing:2px;font-size:11px;font-family:var(--mono)}
+.hmt th{padding:5px 10px;color:var(--ink3);font-size:10px;font-weight:500;text-align:center;white-space:nowrap;background:none;border:none}
+.hmt th.epc{text-align:left;min-width:200px}
+.hmt td{padding:6px 10px;border-radius:4px;text-align:center;font-weight:600;font-size:11px;min-width:62px;white-space:nowrap;border:none}
+.hep{text-align:left!important;background:transparent!important;color:var(--ink3);font-weight:400!important;padding-right:14px!important}
 
-  /* ── Tables ── */
-  .tbl-wrap { background: var(--surface); border-radius: 10px; overflow: hidden; border: 1px solid var(--border); box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
-  table { width: 100%; border-collapse: collapse; font-size: 12px; font-family: var(--mono); }
-  th { text-align: left; color: var(--ink3); font-weight: 500; padding: 10px 14px; border-bottom: 1px solid var(--border); font-size: 11px; letter-spacing: 0.3px; background: var(--surface2); }
-  td { padding: 10px 14px; border-bottom: 1px solid rgba(226,223,214,0.6); color: var(--ink2); vertical-align: middle; }
-  tr:last-child td { border-bottom: none; }
-  tr:hover td { background: #faf9f5; }
-  td.num { text-align: right; }
-  td.g { color: var(--green); font-weight: 600; }
-  td.w { color: var(--c3); font-weight: 600; }
-  td.b { color: var(--c1); font-weight: 600; }
+/* Champion */
+.champ{background:var(--surf);border:1px solid rgba(154,110,16,.3);border-radius:10px;padding:24px 26px;display:flex;gap:24px;align-items:flex-start;flex-wrap:wrap;box-shadow:0 0 0 4px rgba(154,110,16,.06),0 1px 4px rgba(0,0,0,.06);position:relative;overflow:hidden}
+.champ::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--crown),#d4a843,var(--crown))}
+.cl{flex:1;min-width:240px}
+.ctag{font-size:10px;font-family:var(--mono);letter-spacing:1.5px;text-transform:uppercase;color:var(--crown);margin-bottom:7px}
+.ctit{font-family:var(--disp);font-size:18px;font-weight:600;color:var(--ink);margin-bottom:5px;line-height:1.2}
+.cdesc{font-size:12px;color:var(--ink3);line-height:1.65}
+.csts{display:flex;gap:0;border:1px solid var(--bord);border-radius:8px;overflow:hidden;flex-wrap:wrap}
+.cst{padding:11px 15px;border-right:1px solid var(--bord);text-align:center;background:var(--surf2);min-width:75px}
+.cst:last-child{border-right:none}
+.cst .val{font-family:var(--mono);font-size:16px;font-weight:600;color:var(--crown)}
+.cst .slbl{font-size:10px;font-family:var(--mono);color:var(--ink3);letter-spacing:.5px;text-transform:uppercase;margin-top:3px}
 
-  /* ── Champion ── */
-  .champion {
-    background: var(--surface);
-    border: 1px solid rgba(154,110,16,0.3);
-    border-radius: 10px; padding: 28px 32px;
-    display: flex; gap: 32px; align-items: flex-start; flex-wrap: wrap;
-    box-shadow: 0 0 0 4px rgba(154,110,16,0.06), 0 1px 4px rgba(0,0,0,0.06);
-    position: relative; overflow: hidden;
-  }
-  .champion::before {
-    content: '';
-    position: absolute; top: 0; left: 0; right: 0; height: 3px;
-    background: linear-gradient(90deg, var(--crown), #d4a843, var(--crown));
-  }
-  .champ-left { flex: 1; min-width: 260px; }
-  .champ-tag { font-size: 10px; font-family: var(--mono); letter-spacing: 1.5px; text-transform: uppercase; color: var(--crown); margin-bottom: 10px; }
-  .champ-title { font-family: var(--display); font-size: 20px; font-weight: 600; color: var(--ink); margin-bottom: 8px; line-height: 1.2; }
-  .champ-desc { font-size: 13px; color: var(--ink3); line-height: 1.65; }
-  .champ-stats { display: flex; gap: 0; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; flex-wrap: wrap; }
-  .champ-stat { padding: 14px 20px; border-right: 1px solid var(--border); text-align: center; background: var(--surface2); min-width: 90px; }
-  .champ-stat:last-child { border-right: none; }
-  .champ-stat .val { font-family: var(--mono); font-size: 18px; font-weight: 600; color: var(--crown); }
-  .champ-stat .lbl { font-size: 10px; font-family: var(--mono); color: var(--ink3); letter-spacing: 0.5px; text-transform: uppercase; margin-top: 3px; }
+/* Info cards */
+.i3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.ic{padding:16px 18px;background:var(--surf);border-radius:8px;border:1px solid var(--bord);position:relative;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.ic::after{content:'';position:absolute;top:0;left:0;width:3px;height:100%;background:var(--c2)}
+.ic.warn::after{background:var(--c3)} .ic.alert::after{background:var(--c1)} .ic.gold::after{background:var(--crown)}
+.ic h4{font-size:13px;font-weight:600;color:var(--ink);margin-bottom:6px}
+.ic p{font-size:12px;color:var(--ink3);line-height:1.65}
+.ic p strong{color:var(--ink2);font-weight:600}
+.ic.warn p strong{color:var(--c3)} .ic.alert p strong{color:var(--c1)} .ic.gold p strong{color:var(--crown)}
 
-  /* ── Info cards ── */
-  .info3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
-  .info2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
-  .ic {
-    padding: 20px 22px; background: var(--surface);
-    border-radius: 8px; border: 1px solid var(--border);
-    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
-    position: relative; overflow: hidden;
-  }
-  .ic::after { content: ''; position: absolute; top: 0; left: 0; width: 3px; height: 100%; background: var(--c2); }
-  .ic.warn::after { background: var(--c3); }
-  .ic.alert::after { background: var(--c1); }
-  .ic.gold::after { background: var(--crown); }
-  .ic.neutral::after { background: var(--border2); }
-  .ic h4 { font-size: 13px; font-weight: 600; color: var(--ink); margin-bottom: 8px; }
-  .ic p { font-size: 12px; color: var(--ink3); line-height: 1.65; }
-  .ic p strong { color: var(--ink2); font-weight: 600; }
-  .ic.warn p strong { color: var(--c3); }
-  .ic.alert p strong { color: var(--c1); }
-  .ic.gold p strong { color: var(--crown); }
+/* Badges */
+.badge{display:inline-block;padding:1px 6px;border-radius:3px;font-size:10px;font-family:var(--mono);font-weight:600;margin-left:4px;vertical-align:middle}
+.badge.best{background:rgba(154,110,16,.12);color:var(--crown);border:1px solid rgba(154,110,16,.2)}
+.badge.new{background:rgba(42,143,127,.1);color:var(--c2);border:1px solid rgba(42,143,127,.2)}
+.badge.infra{background:rgba(176,120,32,.1);color:var(--c3);border:1px solid rgba(176,120,32,.2)}
+.badge.worst{background:rgba(201,64,64,.08);color:var(--c1);border:1px solid rgba(201,64,64,.15)}
 
-  /* ── Heatmap ── */
-  .hm-wrap { background: var(--surface); border-radius: 10px; padding: 24px; border: 1px solid var(--border); box-shadow: 0 1px 4px rgba(0,0,0,0.06); overflow-x: auto; }
-  .hm-table { width: 100%; border-collapse: separate; border-spacing: 3px; font-size: 12px; font-family: var(--mono); }
-  .hm-table th { padding: 6px 10px; color: var(--ink3); font-size: 11px; font-weight: 500; text-align: center; }
-  .hm-table th:first-child { text-align: left; }
-  .hm-table td { padding: 8px 12px; border-radius: 4px; text-align: center; font-weight: 600; font-size: 11px; }
-  .hm-label { text-align: left !important; color: var(--ink3) !important; background: transparent !important; font-weight: 400 !important; }
+/* Note */
+.note{font-size:12px;color:var(--ink3);font-family:var(--mono);margin-top:10px;line-height:1.6;padding:9px 13px;background:var(--surf2);border-radius:6px;border-left:3px solid var(--bord2)}
 
-  /* ── Badges ── */
-  .badge { display: inline-block; padding: 1px 7px; border-radius: 3px; font-size: 10px; font-family: var(--mono); font-weight: 600; margin-left: 5px; vertical-align: middle; }
-  .badge.best   { background: rgba(154,110,16,0.12); color: var(--crown); border: 1px solid rgba(154,110,16,0.2); }
-  .badge.new    { background: rgba(42,143,127,0.1);  color: var(--c2);    border: 1px solid rgba(42,143,127,0.2); }
-  .badge.infra  { background: rgba(176,120,32,0.1);  color: var(--c3);    border: 1px solid rgba(176,120,32,0.2); }
-  .badge.worst  { background: rgba(201,64,64,0.08);  color: var(--c1);    border: 1px solid rgba(201,64,64,0.15); }
+/* Tabs */
+.tbar{display:flex;border-bottom:1px solid var(--bord);padding:0 16px;gap:2px;background:var(--surf2)}
+.tbtn{padding:9px 13px;font-size:12px;font-family:var(--body);font-weight:500;background:none;border:none;cursor:pointer;color:var(--ink3);border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .15s}
+.tbtn.active{color:var(--ink);border-bottom-color:var(--c2)}
+.tpanel{display:none;padding:14px}
+.tpanel.active{display:block}
 
-  /* ── Note ── */
-  .note {
-    font-size: 12px; color: var(--ink3); font-family: var(--mono);
-    margin-top: 10px; line-height: 1.6; padding: 10px 14px;
-    background: var(--surface2); border-radius: 6px;
-    border-left: 3px solid var(--border2);
-  }
+/* Infra */
+.inf2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.ib{background:var(--surf);border-radius:10px;padding:20px;border:1px solid var(--bord);box-shadow:0 1px 4px rgba(0,0,0,.04)}
+.ib h4{font-size:11px;font-family:var(--mono);font-weight:500;letter-spacing:1.5px;text-transform:uppercase;color:var(--ink3);margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--bord)}
+.ir{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid rgba(226,223,214,.5);font-size:12px;font-family:var(--mono)}
+.ir:last-child{border-bottom:none}
+.ik{color:var(--ink3)} .iv{color:var(--ink);font-weight:600} .iv.ch{color:var(--c3)}
 
-  /* ── Endpoint tabs ── */
-  .tab-bar { display: flex; border-bottom: 1px solid var(--border); padding: 0 20px; gap: 2px; background: var(--surface2); }
-  .tab-btn { padding: 10px 16px; font-size: 12px; font-family: var(--body); font-weight: 500; background: none; border: none; cursor: pointer; color: var(--ink3); border-bottom: 2px solid transparent; margin-bottom: -1px; transition: all 0.15s; }
-  .tab-btn.active { color: var(--ink); border-bottom-color: var(--c2); }
-  .tab-btn:hover { color: var(--ink2); }
-  .tab-panel { display: none; padding: 20px; }
-  .tab-panel.active { display: block; }
-
-  /* ── Infra ── */
-  .infra2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-  .infra-block { background: var(--surface); border-radius: 10px; padding: 24px; border: 1px solid var(--border); box-shadow: 0 1px 4px rgba(0,0,0,0.04); }
-  .infra-block h4 { font-size: 11px; font-family: var(--mono); font-weight: 500; letter-spacing: 1.5px; text-transform: uppercase; color: var(--ink3); margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px solid var(--border); }
-  .infra-row { display: flex; justify-content: space-between; padding: 7px 0; border-bottom: 1px solid rgba(226,223,214,0.5); font-size: 12px; font-family: var(--mono); }
-  .infra-row:last-child { border-bottom: none; }
-  .infra-k { color: var(--ink3); }
-  .infra-v { color: var(--ink); font-weight: 600; }
-  .infra-v.changed { color: var(--c3); }
-
-  /* ── Big number callout ── */
-  .callouts { display: flex; gap: 1px; background: var(--border); border-radius: 10px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
-  .callout { flex: 1; background: var(--surface); padding: 20px 24px; text-align: center; }
-  .callout .big { font-family: var(--display); font-size: 32px; font-weight: 600; color: var(--ink); line-height: 1; margin-bottom: 4px; }
-  .callout .big.up { color: var(--green); }
-  .callout .big.down { color: var(--c1); }
-  .callout .sub { font-size: 11px; font-family: var(--mono); color: var(--ink3); letter-spacing: 0.5px; }
-
-  /* ── Scroll reveal ── */
-  @keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
-  .section-panel.active > * {
-    animation: fadeUp 0.3s ease forwards;
-    opacity: 0;
-  }
-  .section-panel.active > *:nth-child(1) { animation-delay: 0s; }
-  .section-panel.active > *:nth-child(2) { animation-delay: 0.06s; }
-  .section-panel.active > *:nth-child(3) { animation-delay: 0.12s; }
-  .section-panel.active > *:nth-child(4) { animation-delay: 0.18s; }
-  .section-panel.active > *:nth-child(5) { animation-delay: 0.22s; }
-
-  footer {
-    margin: 0 48px; padding: 20px 0;
-    border-top: 1px solid var(--border);
-    font-size: 11px; font-family: var(--mono);
-    color: var(--ink3); display: flex; justify-content: space-between;
-  }
+footer{margin:0 48px;padding:14px 0;border-top:1px solid var(--bord);font-size:11px;font-family:var(--mono);color:var(--ink3);display:flex;justify-content:space-between}
 </style>
 </head>
 <body>
 
-<!-- ── Hero ── -->
 <div class="hero">
-  <div class="hero-inner">
-    <div class="hero-tag">Load Test Report · Feb 18–19 2026</div>
-    <h1>Locust Performance Analysis<br><em>BG Isolation, Workers & Job Tuning</em></h1>
-    <div class="hero-meta">
-      <div class="hero-stat"><div class="val">10</div><div class="lbl">experiments</div></div>
-      <div class="hero-divider"></div>
-      <div class="hero-stat"><div class="val">3</div><div class="lbl">base configs</div></div>
-      <div class="hero-divider"></div>
-      <div class="hero-stat"><div class="val">720u</div><div class="lbl">peak load</div></div>
-      <div class="hero-divider"></div>
-      <div class="hero-stat"><div class="val">0</div><div class="lbl">failures</div></div>
-      <div class="hero-legend">
-        <div class="hero-legend-item"><div class="hero-legend-dot" style="background:#c94040"></div>FALSE · J10 · W1</div>
-        <div class="hero-legend-item"><div class="hero-legend-dot" style="background:#2a8f7f"></div>TRUE · J20 · W1</div>
-        <div class="hero-legend-item"><div class="hero-legend-dot" style="background:#b07820"></div>TRUE · J20 · W4</div>
+  <div class="hi">
+    <div class="htag">Load Test Report · Feb 18–19 2026</div>
+    <h1>Locust Performance Analysis<br><em>BG Isolation, Workers &amp; Job Tuning</em></h1>
+    <div class="hmeta">
+      <div class="hst"><div class="val">10</div><div class="lbl">experiments</div></div>
+      <div class="hdiv"></div>
+      <div class="hst"><div class="val">3</div><div class="lbl">base configs</div></div>
+      <div class="hdiv"></div>
+      <div class="hst"><div class="val">720u</div><div class="lbl">peak load</div></div>
+      <div class="hdiv"></div>
+      <div class="hst"><div class="val">11</div><div class="lbl">endpoints</div></div>
+      <div class="hdiv"></div>
+      <div class="hst"><div class="val">0</div><div class="lbl">failures</div></div>
+      <div class="hleg">
+        <div class="hli"><div class="hld" style="background:#c94040"></div>FALSE·J10·W1</div>
+        <div class="hli"><div class="hld" style="background:#2a8f7f"></div>TRUE·J20·W1</div>
+        <div class="hli"><div class="hld" style="background:#b07820"></div>TRUE·J20·W4</div>
       </div>
     </div>
   </div>
 </div>
 
-<!-- ── Nav ── -->
-<div class="nav-wrap">
-  <div class="nav-bar">
-    <button class="nav-btn active" onclick="switchSection('s1',this)">Config Comparison</button>
-    <button class="nav-btn" onclick="switchSection('s2',this)">72u Tuning Study</button>
-    <button class="nav-btn" onclick="switchSection('s3',this)">Champion & Conclusions</button>
-    <button class="nav-btn" onclick="switchSection('s4',this)">Infrastructure</button>
-    <button class="nav-btn" onclick="switchSection('s5',this)">Endpoint Breakdown</button>
+<div class="nwrap">
+  <div class="nbar">
+    <button class="nbtn active" onclick="sw('s1',this)">Config Comparison</button>
+    <button class="nbtn" onclick="sw('s2',this)">Heatmaps</button>
+    <button class="nbtn" onclick="sw('s3',this)">Tuning Study</button>
+    <button class="nbtn" onclick="sw('s4',this)">Champion &amp; Findings</button>
+    <button class="nbtn" onclick="sw('s5',this)">Infrastructure</button>
+    <button class="nbtn" onclick="sw('s6',this)">Endpoint Tables</button>
   </div>
 </div>
 
 <div class="main">
 
-<!-- ══════════ S1 — Config Comparison ══════════ -->
-<div id="s1" class="section-panel active">
-
+<!-- ══ S1 Config Comparison ══ -->
+<div id="s1" class="sp active">
   <div>
-    <div class="label">At-a-glance — 720 user peak load</div>
-    <div class="callouts">
-      <div class="callout"><div class="big">9.76</div><div class="sub">Best RPS (TRUE·W1)</div></div>
-      <div class="callout"><div class="big up">+53%</div><div class="sub">RPS vs FALSE config</div></div>
-      <div class="callout"><div class="big down">103s</div><div class="sub">FALSE p95 at 720u</div></div>
-      <div class="callout"><div class="big">69s</div><div class="sub">TRUE·W1 p95 at 720u</div></div>
-      <div class="callout"><div class="big up">0</div><div class="sub">Failures across all runs</div></div>
+    <div class="lbl">At a glance</div>
+    <div class="cos">
+      <div class="co"><div class="big">9.76</div><div class="sub">Best RPS (TRUE·W1 @ 720u)</div></div>
+      <div class="co"><div class="big up">+53%</div><div class="sub">RPS uplift vs FALSE config</div></div>
+      <div class="co"><div class="big dn">103s</div><div class="sub">FALSE p95 at 720 users</div></div>
+      <div class="co"><div class="big">69s</div><div class="sub">TRUE·W1 p95 at 720 users</div></div>
+      <div class="co"><div class="big up">0</div><div class="sub">Failures across all runs</div></div>
     </div>
   </div>
 
   <div>
-    <div class="label">Peak load — config summary (720 users)</div>
+    <div class="lbl">720-user peak — config summary</div>
     <div class="cards3">
       <div class="card">
-        <div class="card-title" style="color:var(--c1)">BG_ISO=FALSE · J=10 · W=1</div>
-        <div class="card-sub">720u · 180s · 5/s ramp</div>
-        <div class="stat-row"><span class="stat-k">Requests</span><span class="stat-v">1,147</span></div>
-        <div class="stat-row"><span class="stat-k">RPS</span><span class="stat-v w">6.38</span></div>
-        <div class="stat-row"><span class="stat-k">Avg RT</span><span class="stat-v w">23,385ms</span></div>
-        <div class="stat-row"><span class="stat-k">p95</span><span class="stat-v b">103,000ms</span></div>
-        <div class="stat-row"><span class="stat-k">p99</span><span class="stat-v b">117,000ms</span></div>
-        <div class="stat-row"><span class="stat-k">Failures</span><span class="stat-v g">0</span></div>
+        <div class="ct" style="color:var(--c1)">BG_ISO=FALSE · J=10 · W=1</div>
+        <div class="cs">720u · 180s · 5/s ramp</div>
+        <div class="sr"><span class="sk">Requests</span><span class="sv">1,147</span></div>
+        <div class="sr"><span class="sk">RPS</span><span class="sv w">6.38</span></div>
+        <div class="sr"><span class="sk">Agent msg median</span><span class="sv b">~61,000ms</span></div>
+        <div class="sr"><span class="sk">p95</span><span class="sv b">103,000ms</span></div>
+        <div class="sr"><span class="sk">p99</span><span class="sv b">117,000ms</span></div>
+        <div class="sr"><span class="sk">Failures</span><span class="sv g">0</span></div>
       </div>
       <div class="card">
-        <div class="card-title" style="color:var(--c2)">BG_ISO=TRUE · J=20 · W=1</div>
-        <div class="card-sub">720u · 180s · 5/s ramp</div>
-        <div class="stat-row"><span class="stat-k">Requests</span><span class="stat-v g">1,757</span></div>
-        <div class="stat-row"><span class="stat-k">RPS</span><span class="stat-v g">9.76</span></div>
-        <div class="stat-row"><span class="stat-k">Median RT</span><span class="stat-v w">19,000ms</span></div>
-        <div class="stat-row"><span class="stat-k">p95</span><span class="stat-v w">69,000ms</span></div>
-        <div class="stat-row"><span class="stat-k">p99</span><span class="stat-v b">91,000ms</span></div>
-        <div class="stat-row"><span class="stat-k">Failures</span><span class="stat-v g">0</span></div>
+        <div class="ct" style="color:var(--c2)">BG_ISO=TRUE · J=20 · W=1</div>
+        <div class="cs">720u · 180s · 5/s ramp</div>
+        <div class="sr"><span class="sk">Requests</span><span class="sv g">1,757</span></div>
+        <div class="sr"><span class="sk">RPS</span><span class="sv g">9.76</span></div>
+        <div class="sr"><span class="sk">Median RT</span><span class="sv w">19,000ms</span></div>
+        <div class="sr"><span class="sk">p95</span><span class="sv w">69,000ms</span></div>
+        <div class="sr"><span class="sk">p99</span><span class="sv b">91,000ms</span></div>
+        <div class="sr"><span class="sk">Failures</span><span class="sv g">0</span></div>
       </div>
       <div class="card">
-        <div class="card-title" style="color:var(--c3)">BG_ISO=TRUE · J=20 · W=4</div>
-        <div class="card-sub">720u · 300s · 5/s ramp</div>
-        <div class="stat-row"><span class="stat-k">Requests</span><span class="stat-v">1,587</span></div>
-        <div class="stat-row"><span class="stat-k">RPS</span><span class="stat-v g">8.82</span></div>
-        <div class="stat-row"><span class="stat-k">Median RT</span><span class="stat-v g">13,000ms</span></div>
-        <div class="stat-row"><span class="stat-k">p95</span><span class="stat-v b">78,000ms</span></div>
-        <div class="stat-row"><span class="stat-k">p99</span><span class="stat-v b">92,000ms</span></div>
-        <div class="stat-row"><span class="stat-k">Failures</span><span class="stat-v g">0</span></div>
+        <div class="ct" style="color:var(--c3)">BG_ISO=TRUE · J=20 · W=4</div>
+        <div class="cs">720u · 300s · 5/s ramp</div>
+        <div class="sr"><span class="sk">Requests</span><span class="sv">1,587</span></div>
+        <div class="sr"><span class="sk">RPS</span><span class="sv g">8.82</span></div>
+        <div class="sr"><span class="sk">Median RT</span><span class="sv g">13,000ms</span></div>
+        <div class="sr"><span class="sk">p95</span><span class="sv b">78,000ms</span></div>
+        <div class="sr"><span class="sk">p99</span><span class="sv b">92,000ms</span></div>
+        <div class="sr"><span class="sk">Failures</span><span class="sv g">0</span></div>
       </div>
     </div>
-    <div class="note">* FALSE config 720u median shows 700ms — artifact. Only fast create_thread calls completed within the window. Avg RT of 23,385ms is accurate. Agent_message calls were still deeply queued.</div>
+    <div class="note">* FALSE config 720u: Locust's aggregated median shows 700ms — misleading artifact. 720 of 1,147 total requests were fast create_thread calls (~680ms), pulling the aggregate down. The agent_message weighted median is ~61s, which is what the median chart correctly shows. Avg RT of 23,385ms confirms the true scale of latency.</div>
   </div>
 
   <div>
-    <div class="label">Performance curves — all load levels</div>
-    <div class="charts2">
-      <div class="chart-card"><h3>Throughput (RPS) vs users</h3><div class="chart-wrap"><canvas id="rpsChart"></canvas></div></div>
-      <div class="chart-card"><h3>Median response time (ms) vs users</h3><div class="chart-wrap"><canvas id="medianChart"></canvas></div></div>
-      <div class="chart-card"><h3>p95 response time (ms) vs users</h3><div class="chart-wrap"><canvas id="p95Chart"></canvas></div></div>
-      <div class="chart-card"><h3>Total requests completed vs users</h3><div class="chart-wrap"><canvas id="reqChart"></canvas></div></div>
+    <div class="lbl">Performance curves — all load levels</div>
+    <div class="ch2">
+      <div class="cc"><h3>Throughput (RPS) vs users</h3><div class="cw"><canvas id="rpsChart"></canvas></div></div>
+      <div class="cc"><h3>Median response time (ms) vs users</h3><div class="cw"><canvas id="medChart"></canvas></div></div>
+      <div class="cc"><h3>p95 response time (ms) vs users</h3><div class="cw"><canvas id="p95Chart"></canvas></div></div>
+      <div class="cc"><h3>Total requests completed vs users</h3><div class="cw"><canvas id="reqChart"></canvas></div></div>
     </div>
   </div>
 
   <div>
-    <div class="label">Endpoint p95 heatmap — 216 users (seconds)</div>
-    <div class="hm-wrap">
-      <table class="hm-table" id="heatmapTable"></table>
-      <div class="note" style="margin-top:12px">All agent_message endpoints are 1.7–2.5× slower on FALSE config at 216 users. BG_ISOLATED=TRUE is the single most impactful configuration parameter.</div>
+    <div class="lbl">Key observations</div>
+    <div class="i3">
+      <div class="ic gold"><h4>BG_ISO=TRUE is the #1 lever</h4><p>FALSE→TRUE delivers <strong>35–80% RPS uplift</strong> at all load levels. At 216u: 3.14 → 5.68 RPS. Nothing else comes close to this impact.</p></div>
+      <div class="ic"><h4>FALSE saturates at 216 users</h4><p>FALSE median spikes 19s→<strong>34s</strong> at 216u while TRUE holds ~21s. FALSE p95 hits 74s vs 41–43s for TRUE — clear saturation inflection.</p></div>
+      <div class="ic"><h4>W=4 wins median latency at 720u</h4><p>TRUE·W=4 gets <strong>13s median</strong> vs 19s for W=1 at 720u. But W=1 wins RPS (9.76 vs 8.82). W=4 distributes queue load, W=1 wins throughput.</p></div>
+      <div class="ic warn"><h4>FALSE p95/p99 at 720u is extreme</h4><p>p95=<strong>103s</strong>, p99=117s. That's 1.5–2× worse than TRUE configs. Requests queueing for over a minute. Not viable for production at this scale.</p></div>
+      <div class="ic"><h4>Zero failures across all tests</h4><p>All configs, all load levels: <strong>0% failure rate</strong>. Service degrades gracefully under load — latency rises but requests always complete.</p></div>
+      <div class="ic"><h4>FastAPI layer is never the bottleneck</h4><p>create_thread calls consistently return in <strong>650–900ms</strong> regardless of config or concurrency. All pressure is exclusively in the background queue processing layer.</p></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ S2 Heatmaps ══ -->
+<div id="s2" class="sp">
+
+  <div>
+    <div class="lbl">TRUE · J20 · W4 — p95 across all load levels (real data from 6 Locust runs)</div>
+    <div class="hms">
+      <div class="hmh">
+        <h3>p95 Response Time — TRUE·J20·W4 (seconds)</h3>
+        <span class="sub">8 → 720 users · 11 agent_message endpoints</span>
+      </div>
+      <div class="hmleg">
+        <span>Fast (0s)</span>
+        <div class="hmleg-bar" style="background:linear-gradient(90deg,#2a7a50,#d4a843,#c94040)"></div>
+        <span>Slow (≥90s)</span>
+        <span style="margin-left:16px">Each cell = p95 in seconds</span>
+      </div>
+      <div class="hm-inner"><table class="hmt" id="hm_c3_p95"></table></div>
+      <div class="note" style="margin:0 20px 16px">Notable: p95 stays broadly stable 8u→216u (20–52s range) then jumps sharply at 720u (76–92s). The 72u spike in multi_turn p95 (52s) is an outlier — median for same test was only 8.5s, suggesting occasional queue backup rather than systematic slowness.</div>
     </div>
   </div>
 
   <div>
-    <div class="label">Key observations</div>
-    <div class="info3">
-      <div class="ic gold"><h4>BG_ISO=TRUE is the #1 lever</h4><p>Switching FALSE→TRUE improves RPS by <strong>35–80%</strong> across all load levels. At 216 users: 3.14 → 5.49–5.68 RPS. No other single change comes close.</p></div>
-      <div class="ic"><h4>FALSE saturates at 216 users</h4><p>FALSE median jumps 19s→<strong>34s</strong> at 216u. TRUE configs hold at ~21s. FALSE p95 hits 74s vs 41–43s for TRUE. Clear saturation inflection point.</p></div>
-      <div class="ic"><h4>W=4 wins median at peak load</h4><p>At 720u, TRUE·W=4 gets <strong>13s median</strong> vs 19s for W=1. But W=1 wins RPS (9.76 vs 8.82). W=4 distributes queue load more evenly but coordination overhead costs throughput.</p></div>
-      <div class="ic warn"><h4>FALSE p95/p99 at 720u is severe</h4><p>p95 = <strong>103s</strong>, p99 = 117s. Requests queueing 2–3 minutes. Not suitable for production at this concurrency level.</p></div>
-      <div class="ic"><h4>Zero failures across all tests</h4><p>All configs maintained <strong>0% failure rate</strong> at every load level. Service degrades gracefully — latency rises but requests always complete.</p></div>
-      <div class="ic"><h4>FastAPI layer is not the bottleneck</h4><p>create_thread calls complete in <strong>650–900ms</strong> at all load levels regardless of config. All pressure is in the background queue processing layer.</p></div>
+    <div class="lbl">TRUE · J20 · W1 — p95 across all load levels (real data)</div>
+    <div class="hms">
+      <div class="hmh">
+        <h3>p95 Response Time — TRUE·J20·W1 (seconds)</h3>
+        <span class="sub">8 → 720 users · 11 agent_message endpoints</span>
+      </div>
+      <div class="hmleg">
+        <span>Fast (0s)</span>
+        <div class="hmleg-bar" style="background:linear-gradient(90deg,#2a7a50,#d4a843,#c94040)"></div>
+        <span>Slow (≥90s)</span>
+      </div>
+      <div class="hm-inner"><table class="hmt" id="hm_c2_p95"></table></div>
+      <div class="note" style="margin:0 20px 16px">W=1 shows more consistent p95 than W=4 at 72u — fewer outlier spikes. At 720u, W=1 p95 (69–80s) is meaningfully better than W=4 (76–92s) across most endpoints.</div>
+    </div>
+  </div>
+
+  <div>
+    <div class="lbl">Config comparison — p95 at 216 users (saturation point)</div>
+    <div class="hms">
+      <div class="hmh">
+        <h3>p95 at 216u &amp; 720u — All 3 Configs Side by Side (seconds)</h3>
+        <span class="sub">Shows both saturation point (216u) and peak load (720u) — real data from all uploaded Locust files</span>
+      </div>
+      <div class="hmleg">
+        <span>Fast (0s)</span>
+        <div class="hmleg-bar" style="background:linear-gradient(90deg,#2a7a50,#d4a843,#c94040)"></div>
+        <span>Slow (≥130s)</span>
+      </div>
+      <div class="hm-inner"><table class="hmt" id="hm_cmp_216"></table></div>
+      <div class="note" style="margin:0 20px 16px">At 216u FALSE is 1.7–2.5× slower than TRUE. At 720u FALSE p95 explodes to 105–127s vs 67–80s for TRUE configs. multi_turn_part2 on FALSE hits 127s p95 at 720u — the worst single datapoint across all tests.</div>
+    </div>
+  </div>
+
+  <div>
+    <div class="lbl">TRUE · J20 · W4 — median latency across all load levels</div>
+    <div class="hms">
+      <div class="hmh">
+        <h3>Median Response Time — TRUE·J20·W4 (seconds)</h3>
+        <span class="sub">Typical (not worst-case) latency per endpoint — shows which endpoints are inherently slower</span>
+      </div>
+      <div class="hmleg">
+        <span>Fast (0s)</span>
+        <div class="hmleg-bar" style="background:linear-gradient(90deg,#2a7a50,#d4a843,#c94040)"></div>
+        <span>Slow (≥60s)</span>
+      </div>
+      <div class="hm-inner"><table class="hmt" id="hm_c3_med"></table></div>
+      <div class="note" style="margin:0 20px 16px">advertising_query and streaming_followup_part2 consistently have the highest median latency, suggesting these prompts generate longer LLM responses. quick_question and sixqa_query are consistently fastest — likely shorter, more structured responses.</div>
+    </div>
+  </div>
+
+  <div>
+    <div class="lbl">TRUE · J20 · W4 — request volume across all load levels</div>
+    <div class="hms">
+      <div class="hmh">
+        <h3>Requests Completed per Endpoint — TRUE·J20·W4</h3>
+        <span class="sub">Shows relative endpoint traffic and how volume scales with concurrency</span>
+      </div>
+      <div class="hmleg">
+        <span>Few requests</span>
+        <div class="hmleg-bar" style="background:linear-gradient(90deg,#e8f4f0,#2a8f7f)"></div>
+        <span>Many requests</span>
+      </div>
+      <div class="hm-inner"><table class="hmt" id="hm_c3_reqs"></table></div>
+      <div class="note" style="margin:0 20px 16px">create_thread_test and streaming_conversation handle the most volume by far — 3–5× more requests than other endpoints. complex_query and quick_question have lowest volume, suggesting they're less frequent in the user simulation.</div>
     </div>
   </div>
 
 </div>
 
-<!-- ══════════ S2 — Tuning Study ══════════ -->
-<div id="s2" class="section-panel">
+<!-- ══ S3 Tuning ══ -->
+<div id="s3" class="sp">
+  <div>
+    <div class="lbl">All 10 experiments at 72 users — ranked by RPS</div>
+    <div class="tw"><table>
+      <thead><tr><th>Rank</th><th>Config</th><th>W</th><th>J</th><th>Scale</th><th class="num">Reqs</th><th class="num">RPS</th><th class="num">Median</th><th class="num">p95</th><th class="num">p99</th><th>Notes</th></tr></thead>
+      <tbody>
+        <tr style="background:#fdf9ee">
+          <td style="color:var(--crown);font-weight:700">1 ★</td>
+          <td style="color:var(--c2)">TRUE·W1·J20 <span class="badge best">champion</span></td>
+          <td class="num g">1</td><td class="num g">20</td><td class="num">2</td>
+          <td class="num g">1,141</td><td class="num g">3.80</td><td class="num g">11s</td><td class="num g">29s</td><td class="num g">38s</td>
+          <td style="font-size:11px;color:var(--ink3)">Unbeaten across all 10 experiments</td>
+        </tr>
+        <tr><td>2</td><td>TRUE·W1·J30 <span class="badge new">new</span><span class="badge infra">scale→4</span></td><td class="num">1</td><td class="num">30</td><td class="num w">4</td><td class="num">1,058</td><td class="num">3.53</td><td class="num g">11s</td><td class="num">30s</td><td class="num">44s</td><td style="font-size:11px;color:var(--ink3)">Scale=4 helped J=30. Median matches champion.</td></tr>
+        <tr><td>3</td><td>TRUE·W2·J25 <span class="badge new">new</span><span class="badge infra">scale→4</span></td><td class="num w">2</td><td class="num">25</td><td class="num w">4</td><td class="num">1,038</td><td class="num">3.47</td><td class="num g">11s</td><td class="num">29s</td><td class="num w">48s</td><td style="font-size:11px;color:var(--ink3)">Closest W=2 got. Good p95, but p99 suffers.</td></tr>
+        <tr><td>4</td><td>TRUE·W1·J25 <span class="badge new">new</span><span class="badge infra">scale→4</span></td><td class="num">1</td><td class="num">25</td><td class="num w">4</td><td class="num">1,030</td><td class="num">3.43</td><td class="num">12s</td><td class="num">30s</td><td class="num">44s</td><td style="font-size:11px;color:var(--ink3)">Consistent but J=20 still ahead everywhere.</td></tr>
+        <tr><td>5</td><td>TRUE·W1·J30 <span class="badge new">new</span><span class="badge infra">scale→4</span></td><td class="num">1</td><td class="num">30</td><td class="num w">4</td><td class="num">1,021</td><td class="num">3.41</td><td class="num g">11s</td><td class="num">31s</td><td class="num">43s</td><td style="font-size:11px;color:var(--ink3)">Re-run of rank 2 — autoscaler warmup variance.</td></tr>
+        <tr><td>6</td><td>TRUE·W4·J20</td><td class="num w">4</td><td class="num">20</td><td class="num">2</td><td class="num">890</td><td class="num">2.97</td><td class="num">13s</td><td class="num w">43s</td><td class="num w">57s</td><td style="font-size:11px;color:var(--ink3)">W=4 on scale=2. Contention visible in p95/p99.</td></tr>
+        <tr><td>7</td><td>TRUE·W1·J30 <span class="badge new">new</span></td><td class="num">1</td><td class="num w">30</td><td class="num">2</td><td class="num">945</td><td class="num">3.16</td><td class="num">13s</td><td class="num">38s</td><td class="num w">50s</td><td style="font-size:11px;color:var(--ink3)">J=30 without infra upgrade.</td></tr>
+        <tr><td>8</td><td>TRUE·W2·J20 <span class="badge new">new</span></td><td class="num w">2</td><td class="num">20</td><td class="num">2</td><td class="num">787</td><td class="num b">2.63</td><td class="num">14s</td><td class="num b">47s</td><td class="num b">72s</td><td style="font-size:11px;color:var(--ink3)">W=2 before scale fix. Worse on every metric.</td></tr>
+        <tr><td>9</td><td>FALSE·W1·J10</td><td class="num">1</td><td class="num b">10</td><td class="num">2</td><td class="num">792</td><td class="num">2.64</td><td class="num b">19s</td><td class="num">37s</td><td class="num">48s</td><td style="font-size:11px;color:var(--ink3)">Original FALSE baseline.</td></tr>
+        <tr><td>10</td><td>TRUE·W1·J40 <span class="badge new">new</span><span class="badge worst">worst</span></td><td class="num">1</td><td class="num b">40</td><td class="num">2</td><td class="num b">705</td><td class="num b">2.35</td><td class="num">15s</td><td class="num b">56s</td><td class="num b">72s</td><td style="font-size:11px;color:var(--ink3)">CPU saturation. 40 jobs overwhelmed the pod.</td></tr>
+      </tbody>
+    </table></div>
+  </div>
 
   <div>
-    <div class="label">All 72-user experiments ranked</div>
-    <div class="tbl-wrap">
-      <table>
-        <thead>
-          <tr><th>Rank</th><th>Config</th><th>W</th><th>J</th><th>Scale</th><th class="num">Reqs</th><th class="num">RPS</th><th class="num">Median</th><th class="num">p95</th><th class="num">p99</th><th>Notes</th></tr>
-        </thead>
-        <tbody>
-          <tr style="background:#fdf9ee">
-            <td style="color:var(--crown);font-weight:700">1 ★</td>
-            <td style="color:var(--c2)">TRUE · W1 · J20 <span class="badge best">champion</span></td>
-            <td class="num g">1</td><td class="num g">20</td><td class="num">2</td>
-            <td class="num g">1,141</td><td class="num g">3.80</td><td class="num g">11s</td><td class="num g">29s</td><td class="num g">38s</td>
-            <td style="font-size:11px;color:var(--ink3)">Original best config. Unbeaten across all 10 experiments.</td>
-          </tr>
-          <tr>
-            <td>2</td>
-            <td>TRUE · W1 · J30 <span class="badge new">new</span><span class="badge infra">scale→4</span></td>
-            <td class="num">1</td><td class="num">30</td><td class="num w">4</td>
-            <td class="num">1,058</td><td class="num">3.53</td><td class="num g">11s</td><td class="num">30s</td><td class="num">44s</td>
-            <td style="font-size:11px;color:var(--ink3)">Scale=4 significantly helped J=30. Median matches champion.</td>
-          </tr>
-          <tr>
-            <td>3</td>
-            <td>TRUE · W2 · J25 <span class="badge new">new</span><span class="badge infra">scale→4</span></td>
-            <td class="num w">2</td><td class="num">25</td><td class="num w">4</td>
-            <td class="num">1,038</td><td class="num">3.47</td><td class="num g">11s</td><td class="num">29s</td><td class="num w">48s</td>
-            <td style="font-size:11px;color:var(--ink3)">Closest W=2 got to champion. Good p95, p99 suffers.</td>
-          </tr>
-          <tr>
-            <td>4</td>
-            <td>TRUE · W1 · J25 <span class="badge new">new</span><span class="badge infra">scale→4</span></td>
-            <td class="num">1</td><td class="num">25</td><td class="num w">4</td>
-            <td class="num">1,030</td><td class="num">3.43</td><td class="num">12s</td><td class="num">30s</td><td class="num">44s</td>
-            <td style="font-size:11px;color:var(--ink3)">Consistent, J=20 still ahead on all metrics.</td>
-          </tr>
-          <tr>
-            <td>5</td>
-            <td>TRUE · W1 · J30 <span class="badge new">new</span><span class="badge infra">scale→4</span></td>
-            <td class="num">1</td><td class="num">30</td><td class="num w">4</td>
-            <td class="num">1,021</td><td class="num">3.41</td><td class="num g">11s</td><td class="num">31s</td><td class="num">43s</td>
-            <td style="font-size:11px;color:var(--ink3)">Re-run variance — autoscaler warmup inconsistency.</td>
-          </tr>
-          <tr>
-            <td>6</td>
-            <td>TRUE · W4 · J20</td>
-            <td class="num w">4</td><td class="num">20</td><td class="num">2</td>
-            <td class="num">890</td><td class="num">2.97</td><td class="num">13s</td><td class="num w">43s</td><td class="num w">57s</td>
-            <td style="font-size:11px;color:var(--ink3)">W=4 on scale=2. Contention visible in p95/p99.</td>
-          </tr>
-          <tr>
-            <td>7</td>
-            <td>TRUE · W1 · J30 <span class="badge new">new</span></td>
-            <td class="num">1</td><td class="num w">30</td><td class="num">2</td>
-            <td class="num">945</td><td class="num">3.16</td><td class="num">13s</td><td class="num">38s</td><td class="num w">50s</td>
-            <td style="font-size:11px;color:var(--ink3)">J=30 without infra upgrade.</td>
-          </tr>
-          <tr>
-            <td>8</td>
-            <td>TRUE · W2 · J20 <span class="badge new">new</span></td>
-            <td class="num w">2</td><td class="num">20</td><td class="num">2</td>
-            <td class="num">787</td><td class="num b">2.63</td><td class="num">14s</td><td class="num b">47s</td><td class="num b">72s</td>
-            <td style="font-size:11px;color:var(--ink3)">W=2 before scale fix. Worse than W=1 on every metric.</td>
-          </tr>
-          <tr>
-            <td>9</td>
-            <td>FALSE · W1 · J10 (baseline)</td>
-            <td class="num">1</td><td class="num b">10</td><td class="num">2</td>
-            <td class="num">792</td><td class="num">2.64</td><td class="num b">19s</td><td class="num">37s</td><td class="num">48s</td>
-            <td style="font-size:11px;color:var(--ink3)">Original FALSE baseline.</td>
-          </tr>
-          <tr>
-            <td>10</td>
-            <td>TRUE · W1 · J40 <span class="badge new">new</span><span class="badge worst">worst</span></td>
-            <td class="num">1</td><td class="num b">40</td><td class="num">2</td>
-            <td class="num b">705</td><td class="num b">2.35</td><td class="num">15s</td><td class="num b">56s</td><td class="num b">72s</td>
-            <td style="font-size:11px;color:var(--ink3)">CPU saturation. 40 concurrent jobs overwhelmed the container.</td>
-          </tr>
-        </tbody>
-      </table>
+    <div class="lbl">Tuning charts</div>
+    <div class="ch2">
+      <div class="cc"><h3>RPS by jobs-per-worker (W=1)</h3><div class="cw"><canvas id="tuneRps"></canvas></div></div>
+      <div class="cc"><h3>p95 by jobs-per-worker (W=1, ms)</h3><div class="cw"><canvas id="tuneP95"></canvas></div></div>
+      <div class="cc"><h3>RPS by worker count (J=20, scale=2)</h3><div class="cw"><canvas id="wkRps"></canvas></div></div>
+      <div class="cc"><h3>Scale=4 impact on J=30 (RPS + p95)</h3><div class="cw"><canvas id="scaleImp"></canvas></div></div>
     </div>
   </div>
 
   <div>
-    <div class="label">Tuning visualised</div>
-    <div class="charts2">
-      <div class="chart-card"><h3>RPS by jobs-per-worker (W=1, scale=2)</h3><div class="chart-wrap"><canvas id="tuneRpsChart"></canvas></div></div>
-      <div class="chart-card"><h3>p95 by jobs-per-worker (W=1, ms)</h3><div class="chart-wrap"><canvas id="tuneP95Chart"></canvas></div></div>
-      <div class="chart-card"><h3>RPS by worker count (J=20, scale=2)</h3><div class="chart-wrap"><canvas id="workerRpsChart"></canvas></div></div>
-      <div class="chart-card"><h3>Scale=4 impact on J=30 (RPS + p95)</h3><div class="chart-wrap"><canvas id="scaleChart"></canvas></div></div>
+    <div class="lbl">Why N_WORKERS &gt; 1 doesn't help</div>
+    <div class="i3">
+      <div class="ic gold"><h4>Jobs are 90–95% I/O wait</h4><p>Each agent_message spends most of its time <strong>waiting for the LLM API</strong> (7–30s). CPU in the queue container sits idle during that wait. More workers add OS-level overhead without useful work.</p></div>
+      <div class="ic warn"><h4>Coordination has a measurable cost</h4><p>Workers compete to lock/dequeue from the same job queue. With W=2 at scale=2, p99 jumps from <strong>38s → 72s</strong>. The inter-process coordination tax exceeds any parallelism benefit.</p></div>
+      <div class="ic"><h4>LLM API has a concurrency ceiling ~20</h4><p>J=20 saturates your LLM API's budget. J=25, 30, 40 all decline because extra jobs queue <strong>upstream at the LLM</strong>. More workers just build a longer upstream queue, not faster responses.</p></div>
+      <div class="ic alert"><h4>J=40 caused textbook CPU saturation</h4><p>40 concurrent jobs on a 4-CPU container caused thrashing. RPS dropped <strong>38%</strong> (3.80→2.35), p95 nearly doubled to 56s. Classic oversubscription — too many threads, not enough cores.</p></div>
+      <div class="ic"><h4>Scale=4 helped but didn't break the ceiling</h4><p>Queue max scale 2→4 improved J=30: p95 dropped 38s→30s. But still couldn't beat J=20 because the bottleneck is <strong>upstream at the LLM</strong>, not your infra.</p></div>
+      <div class="ic"><h4>When would W=2 actually help?</h4><p>W=2 is designed for <strong>CPU-bound workloads</strong> where each worker uses its own core. For LLM jobs, W=2·J=25·scale=4 got closest (3.47 RPS, 29s p95) but p99 still suffered. Retest at 216u with longer duration.</p></div>
     </div>
   </div>
-
-  <div>
-    <div class="label">Why N_WORKERS &gt; 1 doesn't help — the explanation</div>
-    <div class="info3">
-      <div class="ic gold"><h4>Jobs are I/O-bound, not CPU-bound</h4><p>Each agent_message call spends <strong>90–95% of its time waiting</strong> for the LLM API to respond. Response times of 7–30s are dominated by upstream inference latency. Your queue container CPU sits mostly idle during that wait. More workers add process overhead without adding useful compute capacity.</p></div>
-      <div class="ic warn"><h4>Worker coordination has a real cost</h4><p>Each worker is a separate OS process. With W=2, both workers <strong>lock, check, and dequeue</strong> from the same job queue. This inter-process overhead is visible: p99 jumps from 38s → 72s at W=2·scale=2. The coordination tax exceeds the parallelism gain.</p></div>
-      <div class="ic"><h4>The LLM API has a concurrency ceiling</h4><p>J=20 perfectly saturates your LLM API's concurrency budget. J=25, 30, 40 all show declining performance because <strong>extra jobs queue up on the LLM side</strong>, not yours. More workers dispatching more jobs just builds a longer upstream queue — not faster responses.</p></div>
-      <div class="ic"><h4>Scale=4 helped but didn't break the ceiling</h4><p>Raising queue max scale 2→4 improved J=30: p95 dropped 38s→30s, RPS improved 3.16→3.53. But still can't beat J=20 because the bottleneck is <strong>upstream at the LLM</strong>, not your infrastructure. Scale=4 will show more benefit at 216+ users under sustained pressure.</p></div>
-      <div class="ic alert"><h4>J=40 caused CPU saturation</h4><p>40 concurrent jobs on a 4-CPU container caused thrashing. RPS dropped <strong>38%</strong> vs J=20 (3.80→2.35), p95 nearly doubled to 56s. Classic CPU oversubscription — too many runnable threads contending for available cores.</p></div>
-      <div class="ic"><h4>When would W=2 actually help?</h4><p>N_WORKERS scales horizontally for <strong>CPU-bound workloads</strong> where each worker genuinely occupies a full CPU core. For your LLM workload W=2·J=25·scale=4 got closest (3.47 RPS, 29s p95) but p99 still suffered. Worth retesting at 216+ users with longer duration to let the autoscaler warm up properly.</p></div>
-    </div>
-  </div>
-
 </div>
 
-<!-- ══════════ S3 — Champion ══════════ -->
-<div id="s3" class="section-panel">
-
-  <div class="champion">
-    <div class="champ-left">
-      <div class="champ-tag">★ Champion configuration</div>
-      <div class="champ-title">BG_ISO=TRUE · J=20 · W=1 · Scale=2</div>
-      <div class="champ-desc">Tested across 10 experiments at 72 users. Unbeaten on every metric — RPS, median, p95, p99, and total requests. Optimal for I/O-bound LLM workloads within current infrastructure. The simplest config that happens to be the best.</div>
+<!-- ══ S4 Champion ══ -->
+<div id="s4" class="sp">
+  <div class="champ">
+    <div class="cl">
+      <div class="ctag">★ Champion configuration — undefeated across 10 experiments</div>
+      <div class="ctit">BG_ISO=TRUE · J=20 · W=1 · Scale=2</div>
+      <div class="cdesc">The simplest config that also happens to be the best. Optimal for I/O-bound LLM workloads where jobs spend 90%+ time waiting on upstream inference. Every attempt to add workers or increase jobs degraded performance.</div>
     </div>
-    <div class="champ-stats">
-      <div class="champ-stat"><div class="val">3.80</div><div class="lbl">RPS @ 72u</div></div>
-      <div class="champ-stat"><div class="val">11s</div><div class="lbl">Median</div></div>
-      <div class="champ-stat"><div class="val">29s</div><div class="lbl">p95</div></div>
-      <div class="champ-stat"><div class="val">38s</div><div class="lbl">p99</div></div>
-      <div class="champ-stat"><div class="val">1,141</div><div class="lbl">Requests</div></div>
-      <div class="champ-stat"><div class="val">0</div><div class="lbl">Failures</div></div>
-    </div>
-  </div>
-
-  <div>
-    <div class="label">All findings summarised</div>
-    <div class="info3">
-      <div class="ic gold"><h4>Finding 1 — BG_ISOLATED dominates</h4><p>FALSE→TRUE improved throughput <strong>35–80%</strong> at all load levels. This is by far the most impactful setting. Always TRUE.</p></div>
-      <div class="ic gold"><h4>Finding 2 — J=20 is the sweet spot</h4><p>Every value above J=20 performed worse. The LLM API's own concurrency ceiling is approximately <strong>20 simultaneous requests</strong>.</p></div>
-      <div class="ic gold"><h4>Finding 3 — W=1 wins for I/O workloads</h4><p>W=2 and W=4 consistently underperformed W=1 in RPS and tail latency. Worker coordination overhead exceeds parallelism gains when jobs spend 90%+ time waiting on external I/O.</p></div>
-      <div class="ic warn"><h4>Finding 4 — Scale=4 is inconsistent at 72u</h4><p>Queue max scale 2→4 showed run-to-run variance (3.53 vs 3.41 RPS, identical configs). Autoscaler warmup takes 60–90s — <strong>significant fraction of a 5-min test</strong>. Expected to help more at 216u with longer duration.</p></div>
-      <div class="ic alert"><h4>Finding 5 — Parameter tuning ceiling reached</h4><p>10 experiments confirm J=20·W=1 can't be beaten through parameter tuning alone at 72 users. <strong>Next gains require higher concurrency testing</strong> (216u) with scale=4.</p></div>
-      <div class="ic"><h4>Finding 6 — FALSE degrades faster under load</h4><p>FALSE median doubles 19s→34s from 72u to 216u. TRUE configs go 11–13s→21s — a much gentler curve. FALSE is <strong>not suitable for production</strong> at 216+ users.</p></div>
+    <div class="csts">
+      <div class="cst"><div class="val">3.80</div><div class="slbl">RPS @ 72u</div></div>
+      <div class="cst"><div class="val">9.76</div><div class="slbl">RPS @ 720u</div></div>
+      <div class="cst"><div class="val">11s</div><div class="slbl">Median @ 72u</div></div>
+      <div class="cst"><div class="val">29s</div><div class="slbl">p95 @ 72u</div></div>
+      <div class="cst"><div class="val">38s</div><div class="slbl">p99 @ 72u</div></div>
+      <div class="cst"><div class="val">0</div><div class="slbl">Failures</div></div>
     </div>
   </div>
 
   <div>
-    <div class="label">Recommended config going forward</div>
-    <div class="tbl-wrap">
-      <table>
-        <thead><tr><th>Parameter</th><th>Current best</th><th>Next test</th><th>Rationale</th></tr></thead>
-        <tbody>
-          <tr><td>BG_ISOLATED</td><td class="g">TRUE</td><td class="g">TRUE</td><td style="color:var(--ink3);font-size:11px">Dominant parameter, always TRUE</td></tr>
-          <tr><td>N_JOBS_PER_WORKER</td><td class="g">20</td><td class="g">20</td><td style="color:var(--ink3);font-size:11px">LLM API concurrency ceiling ~20 — don't exceed</td></tr>
-          <tr><td>N_WORKERS</td><td class="g">1</td><td class="g">1</td><td style="color:var(--ink3);font-size:11px">I/O-bound workload, single worker is optimal</td></tr>
-          <tr><td>Queue max scale</td><td class="w">raised to 4</td><td class="w">keep at 4</td><td style="color:var(--ink3);font-size:11px">Keep 4 for the 216u test — that's where it will matter</td></tr>
-          <tr><td>Queue CPU request</td><td>2</td><td>2</td><td style="color:var(--ink3);font-size:11px">Sufficient for J=20 concurrent jobs</td></tr>
-          <tr><td>Queue CPU limit</td><td>4</td><td>4</td><td style="color:var(--ink3);font-size:11px">Good burst headroom, don't raise until J=20 ceiling is confirmed</td></tr>
-          <tr><td>Container max scale</td><td>2</td><td class="w">consider 4</td><td style="color:var(--ink3);font-size:11px">May become bottleneck at 216+ users</td></tr>
-          <tr><td style="color:var(--c2);font-weight:600">Next test</td><td colspan="2" style="color:var(--c2);font-weight:600">W=1 · J=20 · Scale=4 @ 216 users (10 min run)</td><td style="color:var(--ink3);font-size:11px">Sustained pressure needed to see scale=4 benefit clearly</td></tr>
-        </tbody>
-      </table>
+    <div class="lbl">All findings summarised</div>
+    <div class="i3">
+      <div class="ic gold"><h4>Finding 1 — BG_ISOLATED dominates everything</h4><p>FALSE→TRUE improved RPS by <strong>35–80%</strong> at every single load level tested. This is far more impactful than any worker or job tuning. Always TRUE in production.</p></div>
+      <div class="ic gold"><h4>Finding 2 — J=20 is the LLM concurrency ceiling</h4><p>Every value above J=20 degraded. J=25→-10%, J=30→-7 to -17%, J=40→-38%. The LLM API's own concurrency ceiling is approximately <strong>20 simultaneous requests</strong>.</p></div>
+      <div class="ic gold"><h4>Finding 3 — W=1 is optimal for I/O workloads</h4><p>W=2 and W=4 consistently underperformed W=1 in both RPS and tail latency. <strong>Worker coordination overhead &gt; parallelism gain</strong> for LLM-bound jobs.</p></div>
+      <div class="ic warn"><h4>Finding 4 — Scale=4 inconsistent at 72u</h4><p>Autoscaler warmup takes 60–90s. In a 5-min test, that's 20–30% of the window running under-provisioned. Two identical J=30·scale=4 runs got 3.53 vs 3.41 RPS. <strong>Needs longer test at 216u to evaluate properly.</strong></p></div>
+      <div class="ic alert"><h4>Finding 5 — Tuning ceiling reached at 72u</h4><p>10 experiments confirm no combination of J and W can beat J=20·W=1 at 72 users. <strong>Next gains require higher concurrency (216u) with scale=4.</strong></p></div>
+      <div class="ic"><h4>Finding 6 — FALSE degrades faster under load</h4><p>FALSE median doubles 19s→34s from 72u to 216u. TRUE goes 11–13s→21s — much gentler. FALSE is <strong>not suitable for production at 216+ users.</strong></p></div>
     </div>
   </div>
 
+  <div>
+    <div class="lbl">Recommended config going forward</div>
+    <div class="tw"><table>
+      <thead><tr><th>Parameter</th><th>Current best</th><th>Next test</th><th>Rationale</th></tr></thead>
+      <tbody>
+        <tr><td>BG_ISOLATED</td><td class="g">TRUE</td><td class="g">TRUE</td><td style="color:var(--ink3);font-size:11px">Dominant parameter, always TRUE</td></tr>
+        <tr><td>N_JOBS_PER_WORKER</td><td class="g">20</td><td class="g">20</td><td style="color:var(--ink3);font-size:11px">LLM concurrency ceiling ~20 — don't exceed</td></tr>
+        <tr><td>N_WORKERS</td><td class="g">1</td><td class="g">1</td><td style="color:var(--ink3);font-size:11px">I/O-bound workload, single worker is optimal</td></tr>
+        <tr><td>Queue max scale</td><td class="w">4 (raised)</td><td class="w">keep at 4</td><td style="color:var(--ink3);font-size:11px">Keep for 216u test — sustained load needed to see benefit</td></tr>
+        <tr><td>Queue CPU request</td><td>2</td><td>2</td><td style="color:var(--ink3);font-size:11px">Sufficient for J=20 concurrent jobs</td></tr>
+        <tr><td>Queue CPU limit</td><td>4</td><td>4</td><td style="color:var(--ink3);font-size:11px">Good burst headroom, don't exceed J=20 without raising limit</td></tr>
+        <tr><td>Container max scale</td><td>2</td><td class="w">consider 4</td><td style="color:var(--ink3);font-size:11px">May become bottleneck at 216+ users</td></tr>
+        <tr><td style="color:var(--c2);font-weight:600">Next test to run</td><td colspan="2" style="color:var(--c2);font-weight:600">W=1 · J=20 · Scale=4 @ 216 users · 10 min duration</td><td style="color:var(--ink3);font-size:11px">Sustained pressure + autoscaler warmup = where scale=4 shows real value</td></tr>
+      </tbody>
+    </table></div>
+  </div>
 </div>
 
-<!-- ══════════ S4 — Infrastructure ══════════ -->
-<div id="s4" class="section-panel">
-
+<!-- ══ S5 Infrastructure ══ -->
+<div id="s5" class="sp">
   <div>
-    <div class="label">Current deployment config</div>
-    <div class="infra2">
-      <div class="infra-block">
+    <div class="lbl">Deployment configuration</div>
+    <div class="inf2">
+      <div class="ib">
         <h4>Container — FastAPI server</h4>
-        <div class="infra-row"><span class="infra-k">CPU request per container</span><span class="infra-v">1</span></div>
-        <div class="infra-row"><span class="infra-k">CPU limit per container</span><span class="infra-v">2</span></div>
-        <div class="infra-row"><span class="infra-k">Memory request (MB)</span><span class="infra-v">2,048</span></div>
-        <div class="infra-row"><span class="infra-k">Memory limit (MB)</span><span class="infra-v">4,096</span></div>
-        <div class="infra-row"><span class="infra-k">Min scale</span><span class="infra-v">1</span></div>
-        <div class="infra-row"><span class="infra-k">Max scale</span><span class="infra-v">2</span></div>
-        <div class="note" style="margin-top:14px">HTTP layer only — routes requests and handles API surface. Confirmed not a bottleneck: create_thread calls return 650–900ms at all load levels regardless of config.</div>
+        <div class="ir"><span class="ik">CPU request per container</span><span class="iv">1</span></div>
+        <div class="ir"><span class="ik">CPU limit per container</span><span class="iv">2</span></div>
+        <div class="ir"><span class="ik">Memory request (MB)</span><span class="iv">2,048</span></div>
+        <div class="ir"><span class="ik">Memory limit (MB)</span><span class="iv">4,096</span></div>
+        <div class="ir"><span class="ik">Min scale</span><span class="iv">1</span></div>
+        <div class="ir"><span class="ik">Max scale</span><span class="iv">2</span></div>
+        <div class="note" style="margin-top:12px">HTTP layer only — routes requests, handles API surface. Not a bottleneck: create_thread calls return 650–900ms at all load levels regardless of config.</div>
       </div>
-      <div class="infra-block">
+      <div class="ib">
         <h4>Queue — background job worker</h4>
-        <div class="infra-row"><span class="infra-k">CPU request per container</span><span class="infra-v">2</span></div>
-        <div class="infra-row"><span class="infra-k">CPU limit per container</span><span class="infra-v">4</span></div>
-        <div class="infra-row"><span class="infra-k">Memory request (MB)</span><span class="infra-v">2,048</span></div>
-        <div class="infra-row"><span class="infra-k">Memory limit (MB)</span><span class="infra-v">4,096</span></div>
-        <div class="infra-row"><span class="infra-k">Min scale</span><span class="infra-v">1</span></div>
-        <div class="infra-row"><span class="infra-k">Max scale</span><span class="infra-v changed">4 (raised from 2 during testing)</span></div>
-        <div class="note" style="margin-top:14px">Where N_WORKERS and N_JOBS_PER_WORKER execute. The real performance bottleneck. Queue CPU limit=4 saturates at J=40. Max scale raised 2→4 mid-study.</div>
+        <div class="ir"><span class="ik">CPU request per container</span><span class="iv">2</span></div>
+        <div class="ir"><span class="ik">CPU limit per container</span><span class="iv">4</span></div>
+        <div class="ir"><span class="ik">Memory request (MB)</span><span class="iv">2,048</span></div>
+        <div class="ir"><span class="ik">Memory limit (MB)</span><span class="iv">4,096</span></div>
+        <div class="ir"><span class="ik">Min scale</span><span class="iv">1</span></div>
+        <div class="ir"><span class="ik">Max scale</span><span class="iv ch">4 (raised from 2 during testing)</span></div>
+        <div class="note" style="margin-top:12px">Where N_WORKERS and N_JOBS_PER_WORKER run. The real performance bottleneck. CPU limit=4 saturates at J=40. Max scale raised 2→4 mid-study.</div>
       </div>
     </div>
   </div>
-
   <div>
-    <div class="label">Infrastructure findings</div>
-    <div class="info3">
-      <div class="ic alert"><h4>Max scale=2 was the root W=2 problem</h4><p>With max scale=2, W=2 meant 2 workers sharing 2 pods at full capacity. Workers contended constantly. W=2 got <strong>2.63 RPS</strong> vs W=1's 3.80 — a 31% regression purely from resource contention.</p></div>
-      <div class="ic"><h4>Scale=4 enables clean 1:1 worker-to-pod</h4><p>With max scale=4, each worker in a W=2 config gets its own dedicated pod with <strong>full CPU request=2 guaranteed</strong>. This is what the W=2 theory required. W=2·J=25·scale=4 reached 3.47 RPS — much closer to champion.</p></div>
-      <div class="ic warn"><h4>Autoscaler warmup causes variance</h4><p>Two identical J=30·scale=4 runs got 3.53 and 3.41 RPS. Pod startup takes <strong>60–90s</strong>. In a 5-minute test that's 20–30% of the test window running under-provisioned. Needs longer test duration to stabilise.</p></div>
-      <div class="ic alert"><h4>J=40 hit CPU limit=4 hard</h4><p>40 concurrent jobs on a 4-CPU container caused measurable saturation. RPS dropped 38%, p95 nearly doubled. For J=20, CPU limit=4 is <strong>adequate</strong>. Do not exceed J=20 without raising the CPU limit.</p></div>
-      <div class="ic"><h4>Memory is not a constraint</h4><p>No OOM failures or memory-related latency spikes at any load level. Memory limit=4096MB per queue pod is sufficient. <strong>Not a tuning lever</strong> at current scale.</p></div>
-      <div class="ic gold"><h4>Recommended next infra test</h4><p>Run <strong>W=1 · J=20 · scale=4 at 216 users for 10 minutes</strong>. Longer duration ensures autoscaler warmup completes. Compare against original 216u result (41s p95, 5.49 RPS) to measure scale=4 benefit under sustained load.</p></div>
+    <div class="lbl">Infrastructure findings</div>
+    <div class="i3">
+      <div class="ic alert"><h4>Max scale=2 was the root W=2 problem</h4><p>With scale=2, W=2 meant 2 workers sharing 2 pods at full capacity. Contention caused <strong>31% RPS regression</strong> (3.80→2.63) vs W=1.</p></div>
+      <div class="ic"><h4>Scale=4 enables clean 1:1 worker-to-pod</h4><p>With scale=4, W=2 gets one dedicated pod per worker. W=2·J=25·scale=4 reached <strong>3.47 RPS</strong> — much closer to champion but still behind due to LLM API ceiling.</p></div>
+      <div class="ic warn"><h4>Autoscaler warmup causes test variance</h4><p>Two identical J=30·scale=4 runs got 3.53 vs 3.41 RPS. Pod startup takes <strong>60–90s</strong> — 20–30% of a 5-min test window running under-provisioned.</p></div>
+      <div class="ic alert"><h4>J=40 hit the CPU limit hard</h4><p>40 concurrent jobs on CPU limit=4 caused measurable saturation. For J=20, CPU limit=4 is adequate. <strong>Do not exceed J=20</strong> without raising the CPU limit first.</p></div>
+      <div class="ic"><h4>Memory is not a constraint</h4><p>No OOM failures or memory-related latency spikes at any load level. Memory limit=4096MB is sufficient. <strong>Not a tuning lever</strong> at current scale.</p></div>
+      <div class="ic gold"><h4>Recommended next infra test</h4><p>Run <strong>W=1 · J=20 · scale=4 at 216u for 10 minutes</strong>. Compare against original 216u result (41s p95, 5.49 RPS) to measure scale=4 benefit under sustained, steady-state load.</p></div>
     </div>
   </div>
-
 </div>
 
-<!-- ══════════ S5 — Endpoints ══════════ -->
-<div id="s5" class="section-panel">
+<!-- ══ S6 Endpoint Tables ══ -->
+<div id="s6" class="sp">
   <div>
-    <div class="label">Per-endpoint p95 and request counts — all load levels</div>
-    <div class="tbl-wrap">
-      <div class="tab-bar">
-        <button class="tab-btn active" onclick="switchTab('c1tab',this)">FALSE · J10 · W1</button>
-        <button class="tab-btn" onclick="switchTab('c2tab',this)">TRUE · J20 · W1</button>
-        <button class="tab-btn" onclick="switchTab('c3tab',this)">TRUE · J20 · W4</button>
+    <div class="lbl">Per-endpoint p95 and request counts — all load levels</div>
+    <div class="tw">
+      <div class="tbar">
+        <button class="tbtn active" onclick="st('tc3',this)">TRUE·J20·W4 (6 load levels)</button>
+        <button class="tbtn" onclick="st('tc2',this)">TRUE·J20·W1 (6 load levels)</button>
       </div>
-      <div id="c1tab" class="tab-panel active"></div>
-      <div id="c2tab" class="tab-panel"></div>
-      <div id="c3tab" class="tab-panel"></div>
+      <div id="tc3" class="tpanel active"></div>
+      <div id="tc2" class="tpanel"></div>
     </div>
-    <div class="note" style="margin-top:12px">agent_message endpoints represent LLM calls (the bottleneck). create_thread endpoints are lightweight HTTP calls (650–900ms consistently). The split between them confirms all performance pressure is in the queue layer, not the FastAPI server.</div>
+    <div class="note">agent_message endpoints are LLM calls (the bottleneck, 7–50s). create_thread endpoints are lightweight HTTP calls (650–900ms). This split confirms all performance pressure is in the queue layer, not the FastAPI server.</div>
   </div>
 </div>
 
@@ -598,164 +513,244 @@
 
 <footer>
   <span>Locust Load Test · 3 configs · 10 experiments · langsmith_6sense_com</span>
-  <span>Feb 19 2026</span>
+  <span>Generated Feb 19 2026</span>
 </footer>
 
 <script>
-const C1='#c94040', C2='#2a8f7f', C3='#b07820';
-const users=[8,24,72,150,216,720];
+const C1='#c94040',C2='#2a8f7f',C3='#b07820',CR='#9a6e10';
 
-const c1={label:'FALSE·J10·W1',color:C1,rps:[0.40,0.96,2.64,2.65,3.14,6.38],median:[17000,19000,19000,22000,34000,null],p95:[39000,52000,37000,46000,74000,103000],requests:[118,289,792,795,940,1147]};
+// ── Chart base ──
+const base={
+  responsive:true,maintainAspectRatio:false,
+  plugins:{
+    legend:{display:false},
+    tooltip:{backgroundColor:'#fff',titleColor:'#7a7570',bodyColor:'#1a1814',borderColor:'#e2dfd6',borderWidth:1,padding:9,titleFont:{family:'DM Mono',size:11},bodyFont:{family:'DM Mono',size:12,weight:'600'}}
+  },
+  scales:{
+    x:{grid:{color:'rgba(226,223,214,.8)'},ticks:{color:'#7a7570',font:{family:'DM Mono',size:10}},title:{display:true,text:'Concurrent Users',color:'#7a7570',font:{family:'DM Mono',size:10}}},
+    y:{grid:{color:'rgba(226,223,214,.8)'},ticks:{color:'#7a7570',font:{family:'DM Mono',size:10}}}
+  }
+};
+const wLeg={...base,plugins:{...base.plugins,legend:{display:true,labels:{color:'#7a7570',font:{family:'DM Mono',size:10},boxWidth:10,padding:12}}}};
+
+const users=[8,24,72,150,216,720];
+function ds(label,color,data){return{label,data,borderColor:color,backgroundColor:'transparent',borderWidth:2,pointRadius:4,pointHoverRadius:6,tension:0.3};}
+
+// Real data from Locust files
+// C2 = TRUE J20 W1; C3 = TRUE J20 W4 (named files are C3!)
+const c1={label:'FALSE·J10·W1',color:C1,rps:[0.40,0.96,2.64,2.65,3.14,6.38],median:[17000,19000,19000,22000,34000,61000],p95:[39000,52000,37000,46000,74000,103000],requests:[118,289,792,795,940,1147]};
 const c2={label:'TRUE·J20·W1', color:C2,rps:[0.38,0.92,3.80,4.16,5.49,9.76],median:[16000,15000,11000,12000,21000,19000],p95:[42000,41000,29000,33000,43000,69000],requests:[115,276,1141,1249,1648,1757]};
 const c3={label:'TRUE·J20·W4', color:C3,rps:[0.43,1.30,2.97,3.98,5.68,8.82],median:[14000,12000,13000,13000,21000,13000],p95:[30000,29000,43000,33000,41000,78000],requests:[125,390,890,1195,1704,1587]};
 
-const base={
-  responsive:true, maintainAspectRatio:false,
-  plugins:{
-    legend:{display:false},
-    tooltip:{backgroundColor:'#fff',titleColor:'#7a7570',bodyColor:'#1a1814',borderColor:'#e2dfd6',borderWidth:1,padding:10,titleFont:{family:'DM Mono',size:11},bodyFont:{family:'DM Mono',size:12,weight:'600'}}
-  },
-  scales:{
-    x:{grid:{color:'rgba(226,223,214,0.8)'},ticks:{color:'#7a7570',font:{family:'DM Mono',size:10}},title:{display:true,text:'Concurrent Users',color:'#7a7570',font:{family:'DM Mono',size:10}}},
-    y:{grid:{color:'rgba(226,223,214,0.8)'},ticks:{color:'#7a7570',font:{family:'DM Mono',size:10}}}
-  }
-};
-const withLeg={...base,plugins:{...base.plugins,legend:{display:true,labels:{color:'#7a7570',font:{family:'DM Mono',size:10},boxWidth:10,padding:14}}}};
-
-function ds(cfg,data){return{label:cfg.label,data,borderColor:cfg.color,backgroundColor:'transparent',borderWidth:2,pointRadius:4,pointHoverRadius:6,tension:0.3};}
-
-new Chart(document.getElementById('rpsChart'),{type:'line',data:{labels:users,datasets:[ds(c1,c1.rps),ds(c2,c2.rps),ds(c3,c3.rps)]},options:withLeg});
-new Chart(document.getElementById('medianChart'),{type:'line',data:{labels:users,datasets:[ds(c1,c1.median),ds(c2,c2.median),ds(c3,c3.median)]},options:base});
-new Chart(document.getElementById('p95Chart'),{type:'line',data:{labels:users,datasets:[ds(c1,c1.p95),ds(c2,c2.p95),ds(c3,c3.p95)]},options:base});
-new Chart(document.getElementById('reqChart'),{type:'bar',data:{labels:users,datasets:[
+new Chart(document.getElementById('rpsChart'),{type:'line',data:{labels:users,datasets:[ds(c1.label,C1,c1.rps),ds(c2.label,C2,c2.rps),ds(c3.label,C3,c3.rps)]},options:wLeg});
+new Chart(document.getElementById('medChart'), {type:'line',data:{labels:users,datasets:[ds(c1.label,C1,c1.median),ds(c2.label,C2,c2.median),ds(c3.label,C3,c3.median)]},options:base});
+new Chart(document.getElementById('p95Chart'), {type:'line',data:{labels:users,datasets:[ds(c1.label,C1,c1.p95),ds(c2.label,C2,c2.p95),ds(c3.label,C3,c3.p95)]},options:base});
+new Chart(document.getElementById('reqChart'), {type:'bar',data:{labels:users,datasets:[
   {label:c1.label,data:c1.requests,backgroundColor:C1+'44',borderColor:C1,borderWidth:1.5},
   {label:c2.label,data:c2.requests,backgroundColor:C2+'44',borderColor:C2,borderWidth:1.5},
   {label:c3.label,data:c3.requests,backgroundColor:C3+'44',borderColor:C3,borderWidth:1.5},
-]},options:withLeg});
+]},options:wLeg});
 
-// Tuning
-const jL=['J=20','J=25','J=30','J=40'];
-const jR=[3.80,3.43,3.53,2.35];
-const jP=[29000,30000,38000,56000];
-new Chart(document.getElementById('tuneRpsChart'),{type:'bar',data:{labels:jL,datasets:[{data:jR,backgroundColor:jR.map((v,i)=>i===0?'#9a6e1033':C2+'33'),borderColor:jR.map((v,i)=>i===0?'#9a6e10':C2),borderWidth:2}]},options:{...base,plugins:{...base.plugins,legend:{display:false}}}});
-new Chart(document.getElementById('tuneP95Chart'),{type:'bar',data:{labels:jL,datasets:[{data:jP,backgroundColor:jP.map(v=>v<=29000?'#9a6e1033':v<40000?C2+'33':C1+'33'),borderColor:jP.map(v=>v<=29000?'#9a6e10':v<40000?C2:C1),borderWidth:2}]},options:{...base,plugins:{...base.plugins,legend:{display:false}}}});
-new Chart(document.getElementById('workerRpsChart'),{type:'bar',data:{labels:['W=1','W=2','W=4'],datasets:[{data:[3.80,2.63,2.97],backgroundColor:['#9a6e1033',C1+'33',C1+'33'],borderColor:['#9a6e10',C1,C1],borderWidth:2}]},options:{...base,plugins:{...base.plugins,legend:{display:false}}}});
-new Chart(document.getElementById('scaleChart'),{type:'bar',data:{labels:['J=30, Scale=2','J=30, Scale=4','J=20, Scale=2'],datasets:[
-  {label:'RPS',data:[3.16,3.53,3.80],backgroundColor:[C3+'44',C3+'88','#9a6e1066'],borderColor:[C3,C3,'#9a6e10'],borderWidth:2,yAxisID:'y'},
-  {label:'p95 (ms)',data:[38000,30000,29000],backgroundColor:'transparent',borderColor:[C1,C2,'#9a6e10'],borderWidth:2,type:'line',yAxisID:'y1',tension:0.3,pointRadius:5}
-]},options:{...withLeg,scales:{...base.scales,
+// Tuning charts
+new Chart(document.getElementById('tuneRps'),{type:'bar',data:{labels:['J=20','J=25','J=30','J=40'],datasets:[{data:[3.80,3.43,3.53,2.35],backgroundColor:['#9a6e1033',C2+'33',C2+'33',C1+'33'],borderColor:[CR,C2,C2,C1],borderWidth:2}]},options:{...base,plugins:{...base.plugins,legend:{display:false}}}});
+new Chart(document.getElementById('tuneP95'),{type:'bar',data:{labels:['J=20','J=25','J=30','J=40'],datasets:[{data:[29000,30000,38000,56000],backgroundColor:['#9a6e1033',C2+'33',C3+'33',C1+'33'],borderColor:[CR,C2,C3,C1],borderWidth:2}]},options:{...base,plugins:{...base.plugins,legend:{display:false}}}});
+new Chart(document.getElementById('wkRps'),{type:'bar',data:{labels:['W=1','W=2','W=4'],datasets:[{data:[3.80,2.63,2.97],backgroundColor:['#9a6e1033',C1+'33',C1+'33'],borderColor:[CR,C1,C1],borderWidth:2}]},options:{...base,plugins:{...base.plugins,legend:{display:false}}}});
+new Chart(document.getElementById('scaleImp'),{type:'bar',data:{labels:['J=30\nScale=2','J=30\nScale=4','J=20\nScale=2 ★'],datasets:[
+  {label:'RPS',data:[3.16,3.53,3.80],backgroundColor:[C3+'44',C3+'88','#9a6e1066'],borderColor:[C3,C3,CR],borderWidth:2,yAxisID:'y'},
+  {label:'p95 (ms)',data:[38000,30000,29000],backgroundColor:'transparent',borderColor:[C1,C2,CR],borderWidth:2,type:'line',yAxisID:'y1',tension:0.3,pointRadius:5}
+]},options:{...wLeg,scales:{...base.scales,
   y:{...base.scales.y,title:{display:true,text:'RPS',color:'#7a7570',font:{family:'DM Mono',size:10}}},
   y1:{position:'right',grid:{display:false},ticks:{color:'#7a7570',font:{family:'DM Mono',size:10}},title:{display:true,text:'p95 ms',color:'#7a7570',font:{family:'DM Mono',size:10}}}
 }}});
 
-// Heatmap
-const eps216=[
-  {name:'advertising_query',c1:79000,c2:45000,c3:45000},
-  {name:'complex_query',c1:70000,c2:45000,c3:45000},
-  {name:'create_thread_test',c1:82000,c2:47000,c3:43000},
-  {name:'keyword_query',c1:82000,c2:37000,c3:40000},
-  {name:'multi_turn_part1',c1:74000,c2:33000,c3:39000},
-  {name:'multi_turn_part2',c1:72000,c2:42000,c3:40000},
-  {name:'quick_question',c1:76000,c2:50000,c3:51000},
-  {name:'sixqa_query',c1:73000,c2:37000,c3:32000},
-  {name:'streaming_conversation',c1:70000,c2:37000,c3:35000},
-  {name:'streaming_followup_p1',c1:80000,c2:52000,c3:42000},
-  {name:'streaming_followup_p2',c1:68000,c2:47000,c3:45000},
+// ══ REAL HEATMAP DATA from Locust files ══
+const ENDPOINTS = [
+  'advertising_query','complex_query','create_thread_test',
+  'keyword_query','multi_turn_part1','multi_turn_part2',
+  'quick_question','sixqa_query','streaming_conversation',
+  'streaming_followup_part1','streaming_followup_part2'
 ];
-function heatColor(v){
-  const r=Math.min(v/100000,1);
+const LOAD_LEVELS = [8,24,72,150,216,720];
+
+// C3 (TRUE J20 W4) — extracted from actual Locust HTML files
+const c3_p95 = {
+  8:   {advertising_query:22,complex_query:27,create_thread_test:30,keyword_query:24,multi_turn_part1:34,multi_turn_part2:34,quick_question:14,sixqa_query:30,streaming_conversation:29,streaming_followup_part1:20,streaming_followup_part2:32},
+  24:  {advertising_query:30,complex_query:25,create_thread_test:32,keyword_query:28,multi_turn_part1:22,multi_turn_part2:29,quick_question:26,sixqa_query:33,streaming_conversation:25,streaming_followup_part1:34,streaming_followup_part2:29},
+  72:  {advertising_query:43,complex_query:44,create_thread_test:46,keyword_query:46,multi_turn_part1:52,multi_turn_part2:51,quick_question:44,sixqa_query:30,streaming_conversation:36,streaming_followup_part1:47,streaming_followup_part2:41},
+  150: {advertising_query:35,complex_query:33,create_thread_test:36,keyword_query:41,multi_turn_part1:30,multi_turn_part2:42,quick_question:30,sixqa_query:31,streaming_conversation:30,streaming_followup_part1:47,streaming_followup_part2:36},
+  216: {advertising_query:45,complex_query:45,create_thread_test:43,keyword_query:40,multi_turn_part1:39,multi_turn_part2:40,quick_question:51,sixqa_query:32,streaming_conversation:35,streaming_followup_part1:42,streaming_followup_part2:45},
+  720: {advertising_query:86,complex_query:92,create_thread_test:87,keyword_query:76,multi_turn_part1:80,multi_turn_part2:80,quick_question:87,sixqa_query:79,streaming_conversation:79,streaming_followup_part1:80,streaming_followup_part2:79},
+};
+
+const c3_median = {
+  8:   {advertising_query:22,complex_query:22,create_thread_test:19,keyword_query:16,multi_turn_part1:19,multi_turn_part2:14,quick_question:7,sixqa_query:8,streaming_conversation:10,streaming_followup_part1:13,streaming_followup_part2:24},
+  24:  {advertising_query:22,complex_query:9,create_thread_test:21,keyword_query:11,multi_turn_part1:7,multi_turn_part2:13,quick_question:7,sixqa_query:7,streaming_conversation:8,streaming_followup_part1:8,streaming_followup_part2:15},
+  72:  {advertising_query:28,complex_query:12,create_thread_test:26,keyword_query:12,multi_turn_part1:9,multi_turn_part2:15,quick_question:10,sixqa_query:8,streaming_conversation:9,streaming_followup_part1:12,streaming_followup_part2:26},
+  150: {advertising_query:23,complex_query:15,create_thread_test:20,keyword_query:12,multi_turn_part1:10,multi_turn_part2:13,quick_question:12,sixqa_query:10,streaming_conversation:13,streaming_followup_part1:12,streaming_followup_part2:21},
+  216: {advertising_query:25,complex_query:22,create_thread_test:24,keyword_query:22,multi_turn_part1:22,multi_turn_part2:23,quick_question:23,sixqa_query:19,streaming_conversation:21,streaming_followup_part1:22,streaming_followup_part2:24},
+  720: {advertising_query:47,complex_query:53,create_thread_test:58,keyword_query:39,multi_turn_part1:52,multi_turn_part2:39,quick_question:48,sixqa_query:48,streaming_conversation:48,streaming_followup_part1:55,streaming_followup_part2:56},
+};
+
+const c3_reqs = {
+  8:   {advertising_query:4,complex_query:4,create_thread_test:26,keyword_query:5,multi_turn_part1:11,multi_turn_part2:11,quick_question:3,sixqa_query:6,streaming_conversation:37,streaming_followup_part1:5,streaming_followup_part2:5},
+  24:  {advertising_query:21,complex_query:20,create_thread_test:85,keyword_query:24,multi_turn_part1:30,multi_turn_part2:24,quick_question:12,sixqa_query:32,streaming_conversation:70,streaming_followup_part1:26,streaming_followup_part2:22},
+  72:  {advertising_query:56,complex_query:31,create_thread_test:182,keyword_query:58,multi_turn_part1:67,multi_turn_part2:59,quick_question:28,sixqa_query:56,streaming_conversation:179,streaming_followup_part1:53,streaming_followup_part2:49},
+  150: {advertising_query:76,complex_query:33,create_thread_test:255,keyword_query:65,multi_turn_part1:85,multi_turn_part2:77,quick_question:41,sixqa_query:75,streaming_conversation:221,streaming_followup_part1:64,streaming_followup_part2:53},
+  216: {advertising_query:98,complex_query:53,create_thread_test:402,keyword_query:107,multi_turn_part1:103,multi_turn_part2:86,quick_question:52,sixqa_query:106,streaming_conversation:313,streaming_followup_part1:89,streaming_followup_part2:79},
+  720: {advertising_query:67,complex_query:30,create_thread_test:235,keyword_query:64,multi_turn_part1:67,multi_turn_part2:29,quick_question:32,sixqa_query:74,streaming_conversation:184,streaming_followup_part1:59,streaming_followup_part2:26},
+};
+
+// C2 (TRUE J20 W1) — extracted from actual Locust HTML files
+const c2_p95 = {
+  8:   {advertising_query:37,complex_query:40,create_thread_test:43,keyword_query:23,multi_turn_part1:54,multi_turn_part2:21,quick_question:34,sixqa_query:42,streaming_conversation:40,streaming_followup_part1:22,streaming_followup_part2:32},
+  24:  {advertising_query:33,complex_query:44,create_thread_test:50,keyword_query:43,multi_turn_part1:66,multi_turn_part2:58,quick_question:60,sixqa_query:24,streaming_conversation:25,streaming_followup_part1:47,streaming_followup_part2:96},
+  72:  {advertising_query:37,complex_query:30,create_thread_test:29,keyword_query:32,multi_turn_part1:24,multi_turn_part2:36,quick_question:30,sixqa_query:24,streaming_conversation:26,streaming_followup_part1:30,streaming_followup_part2:26},
+  150: {advertising_query:35,complex_query:33,create_thread_test:36,keyword_query:41,multi_turn_part1:30,multi_turn_part2:42,quick_question:30,sixqa_query:31,streaming_conversation:30,streaming_followup_part1:47,streaming_followup_part2:36},
+  216: {advertising_query:45,complex_query:45,create_thread_test:47,keyword_query:37,multi_turn_part1:33,multi_turn_part2:42,quick_question:50,sixqa_query:37,streaming_conversation:37,streaming_followup_part1:52,streaming_followup_part2:47},
+  720: {advertising_query:73,complex_query:69,create_thread_test:74,keyword_query:74,multi_turn_part1:67,multi_turn_part2:74,quick_question:80,sixqa_query:71,streaming_conversation:69,streaming_followup_part1:72,streaming_followup_part2:74},
+};
+
+// FALSE config (C1) at 216u — from prior analysis
+const c1_p95_216 = {advertising_query:79,complex_query:70,create_thread_test:82,keyword_query:82,multi_turn_part1:74,multi_turn_part2:72,quick_question:76,sixqa_query:73,streaming_conversation:70,streaming_followup_part1:80,streaming_followup_part2:68};
+// FALSE config (C1) at 720u — from uploaded Locust file
+const c1_p95_720 = {advertising_query:119,complex_query:114,create_thread_test:116,keyword_query:113,multi_turn_part1:113,multi_turn_part2:127,quick_question:109,sixqa_query:115,streaming_conversation:105,streaming_followup_part1:108,streaming_followup_part2:119};
+const c1_median_720 = {advertising_query:64,complex_query:48,create_thread_test:68,keyword_query:60,multi_turn_part1:68,multi_turn_part2:70,quick_question:41,sixqa_query:65,streaming_conversation:51,streaming_followup_part1:66,streaming_followup_part2:66};
+
+// ── Heatmap rendering ──
+function heatColorP95(v,maxV){
+  const r=Math.min(v/maxV,1);
   if(r<0.35){const t=r/0.35;return`rgb(${Math.round(42+t*213)},${Math.round(143-t*13)},${Math.round(127-t*127)})`;}
   else{const t=(r-0.35)/0.65;return`rgb(255,${Math.round(140-t*140)},0)`;}
 }
-function textColor(v){return v>55000?'#fff':'#fff';}
-document.getElementById('heatmapTable').innerHTML=`
-<thead><tr>
-  <th style="text-align:left;min-width:180px">Endpoint</th>
-  <th style="color:${C1}">FALSE · J10 · W1</th>
-  <th style="color:${C2}">TRUE · J20 · W1</th>
-  <th style="color:${C3}">TRUE · J20 · W4</th>
-</tr></thead>
-<tbody>${eps216.map(e=>`<tr>
-  <td class="hm-label">${e.name}</td>
-  <td style="background:${heatColor(e.c1)};color:#fff">${(e.c1/1000).toFixed(0)}s</td>
-  <td style="background:${heatColor(e.c2)};color:#fff">${(e.c2/1000).toFixed(0)}s</td>
-  <td style="background:${heatColor(e.c3)};color:#fff">${(e.c3/1000).toFixed(0)}s</td>
-</tr>`).join('')}</tbody>`;
+function heatColorReqs(v,maxV){
+  const r=Math.min(v/maxV,1);
+  return`rgb(${Math.round(232-r*190)},${Math.round(244-r*100)},${Math.round(240-r*113)})`;
+}
+function textOnColor(v,maxV){return(v/maxV)>0.45?'#fff':'#333';}
 
-// Endpoint tables
-const epData={
-  c1:[
-    {name:'agent_message_advertising_query',u8:{r:10,p95:37000},u24:{r:22,p95:33000},u72:{r:59,p95:42000},u216:{r:49,p95:79000}},
-    {name:'agent_message_complex_query',u8:{r:2,p95:40000},u24:{r:6,p95:44000},u72:{r:18,p95:64000},u216:{r:32,p95:70000}},
-    {name:'agent_message_create_thread_test',u8:{r:20,p95:39000},u24:{r:61,p95:41000},u72:{r:172,p95:37000},u216:{r:199,p95:82000}},
-    {name:'agent_message_keyword_query',u8:{r:7,p95:20000},u24:{r:20,p95:98000},u72:{r:41,p95:38000},u216:{r:47,p95:82000}},
-    {name:'agent_message_multi_turn_part1',u8:{r:10,p95:30000},u24:{r:20,p95:45000},u72:{r:54,p95:30000},u216:{r:47,p95:74000}},
-    {name:'agent_message_multi_turn_part2',u8:{r:9,p95:37000},u24:{r:17,p95:87000},u72:{r:45,p95:38000},u216:{r:32,p95:72000}},
-    {name:'agent_message_quick_question',u8:{r:2,p95:13000},u24:{r:11,p95:35000},u72:{r:26,p95:33000},u216:{r:31,p95:76000}},
-    {name:'agent_message_sixqa_query',u8:{r:6,p95:20000},u24:{r:24,p95:27000},u72:{r:65,p95:31000},u216:{r:56,p95:73000}},
-    {name:'agent_message_streaming_conversation',u8:{r:30,p95:41000},u24:{r:49,p95:52000},u72:{r:142,p95:32000},u216:{r:155,p95:70000}},
-    {name:'agent_message_streaming_followup_p1',u8:{r:7,p95:41000},u24:{r:20,p95:75000},u72:{r:51,p95:44000},u216:{r:45,p95:80000}},
-    {name:'agent_message_streaming_followup_p2',u8:{r:7,p95:38000},u24:{r:15,p95:38000},u72:{r:47,p95:36000},u216:{r:31,p95:68000}},
-    {name:'create_thread (all endpoints)',u8:{r:9,p95:930},u24:{r:20,p95:830},u72:{r:72,p95:1000},u216:{r:201,p95:1200}},
-  ],
-  c2:[
-    {name:'agent_message_advertising_query',u8:{r:10,p95:37000},u24:{r:22,p95:33000},u72:{r:68,p95:37000},u216:{r:101,p95:45000}},
-    {name:'agent_message_complex_query',u8:{r:2,p95:40000},u24:{r:6,p95:44000},u72:{r:37,p95:30000},u216:{r:63,p95:45000}},
-    {name:'agent_message_create_thread_test',u8:{r:21,p95:43000},u24:{r:64,p95:50000},u72:{r:260,p95:29000},u216:{r:373,p95:47000}},
-    {name:'agent_message_keyword_query',u8:{r:7,p95:23000},u24:{r:19,p95:43000},u72:{r:65,p95:32000},u216:{r:98,p95:37000}},
-    {name:'agent_message_multi_turn_part1',u8:{r:9,p95:54000},u24:{r:20,p95:66000},u72:{r:82,p95:24000},u216:{r:83,p95:33000}},
-    {name:'agent_message_multi_turn_part2',u8:{r:9,p95:21000},u24:{r:18,p95:58000},u72:{r:79,p95:36000},u216:{r:76,p95:42000}},
-    {name:'agent_message_quick_question',u8:{r:3,p95:34000},u24:{r:7,p95:60000},u72:{r:43,p95:30000},u216:{r:53,p95:50000}},
-    {name:'agent_message_sixqa_query',u8:{r:6,p95:42000},u24:{r:18,p95:24000},u72:{r:76,p95:24000},u216:{r:119,p95:37000}},
-    {name:'agent_message_streaming_conversation',u8:{r:27,p95:40000},u24:{r:48,p95:25000},u72:{r:237,p95:26000},u216:{r:295,p95:37000}},
-    {name:'agent_message_streaming_followup_p1',u8:{r:9,p95:22000},u24:{r:16,p95:47000},u72:{r:64,p95:30000},u216:{r:90,p95:52000}},
-    {name:'agent_message_streaming_followup_p2',u8:{r:9,p95:32000},u24:{r:13,p95:96000},u72:{r:58,p95:26000},u216:{r:81,p95:47000}},
-    {name:'create_thread (all endpoints)',u8:{r:11,p95:780},u24:{r:23,p95:760},u72:{r:79,p95:830},u216:{r:234,p95:1200}},
-  ],
-  c3:[
-    {name:'agent_message_advertising_query',u8:{r:4,p95:22000},u24:{r:21,p95:30000},u72:{r:56,p95:43000},u216:{r:98,p95:45000}},
-    {name:'agent_message_complex_query',u8:{r:4,p95:27000},u24:{r:20,p95:25000},u72:{r:31,p95:44000},u216:{r:53,p95:45000}},
-    {name:'agent_message_create_thread_test',u8:{r:26,p95:30000},u24:{r:85,p95:32000},u72:{r:182,p95:46000},u216:{r:402,p95:43000}},
-    {name:'agent_message_keyword_query',u8:{r:5,p95:24000},u24:{r:24,p95:28000},u72:{r:58,p95:46000},u216:{r:107,p95:40000}},
-    {name:'agent_message_multi_turn_part1',u8:{r:11,p95:34000},u24:{r:30,p95:22000},u72:{r:67,p95:52000},u216:{r:103,p95:39000}},
-    {name:'agent_message_multi_turn_part2',u8:{r:11,p95:34000},u24:{r:24,p95:29000},u72:{r:59,p95:51000},u216:{r:86,p95:40000}},
-    {name:'agent_message_quick_question',u8:{r:3,p95:14000},u24:{r:12,p95:26000},u72:{r:28,p95:44000},u216:{r:52,p95:51000}},
-    {name:'agent_message_sixqa_query',u8:{r:6,p95:30000},u24:{r:32,p95:33000},u72:{r:56,p95:30000},u216:{r:106,p95:32000}},
-    {name:'agent_message_streaming_conversation',u8:{r:37,p95:29000},u24:{r:70,p95:25000},u72:{r:179,p95:36000},u216:{r:313,p95:35000}},
-    {name:'agent_message_streaming_followup_p1',u8:{r:5,p95:20000},u24:{r:26,p95:34000},u72:{r:53,p95:47000},u216:{r:89,p95:42000}},
-    {name:'agent_message_streaming_followup_p2',u8:{r:5,p95:32000},u24:{r:22,p95:29000},u72:{r:49,p95:41000},u216:{r:79,p95:45000}},
-    {name:'create_thread (all endpoints)',u8:{r:10,p95:780},u24:{r:22,p95:800},u72:{r:70,p95:1300},u216:{r:226,p95:1200}},
-  ]
+function buildHeatmap(tableId, data, levels, endpoints, colorFn, maxV, suffix='s'){
+  const el=document.getElementById(tableId);
+  let html=`<thead><tr><th class="epc">Endpoint</th>${levels.map(l=>`<th>${l}u</th>`).join('')}</tr></thead><tbody>`;
+  for(const ep of endpoints){
+    const short=ep.replace(/_/g,' ');
+    html+=`<tr><td class="hep">${short}</td>`;
+    for(const l of levels){
+      const v=data[l]?data[l][ep]:null;
+      if(v==null){html+=`<td style="background:#f2f0eb;color:#ccc">—</td>`;continue;}
+      const bg=colorFn(v,maxV);
+      const fg=textOnColor(v,maxV);
+      html+=`<td style="background:${bg};color:${fg}">${v}${suffix}</td>`;
+    }
+    html+='</tr>';
+  }
+  html+='</tbody>';
+  el.innerHTML=html;
+}
+
+// C3 p95 across all 6 load levels
+buildHeatmap('hm_c3_p95',c3_p95,[8,24,72,150,216,720],ENDPOINTS,heatColorP95,92,'s');
+
+// C2 p95 across all 6 load levels
+buildHeatmap('hm_c2_p95',c2_p95,[8,24,72,150,216,720],ENDPOINTS,heatColorP95,92,'s');
+
+// 3-config comparison at 216u AND 720u
+(function(){
+  const el=document.getElementById('hm_cmp_216');
+  const levels=[216,720];
+  const c1_data={216:c1_p95_216, 720:c1_p95_720};
+  const c2_data={216:c2_p95[216], 720:c2_p95[720]};
+  const c3_data={216:c3_p95[216], 720:c3_p95[720]};
+  let html=`<thead><tr>
+    <th class="epc">Endpoint</th>
+    <th colspan="2" style="color:${C1};text-align:center">FALSE·J10·W1</th>
+    <th colspan="2" style="color:${C2};text-align:center">TRUE·J20·W1</th>
+    <th colspan="2" style="color:${C3};text-align:center">TRUE·J20·W4</th>
+  </tr><tr>
+    <th></th><th>216u</th><th>720u</th><th>216u</th><th>720u</th><th>216u</th><th>720u</th>
+  </tr></thead><tbody>`;
+  for(const ep of ENDPOINTS){
+    html+=`<tr><td class="hep">${ep.replace(/_/g,' ')}</td>`;
+    const allVals=[c1_data[216][ep],c1_data[720][ep],c2_data[216][ep],c2_data[720][ep],c3_data[216][ep],c3_data[720][ep]];
+    const maxV=Math.max(...allVals.filter(Boolean));
+    for(const [src,lvl] of [[c1_data,216],[c1_data,720],[c2_data,216],[c2_data,720],[c3_data,216],[c3_data,720]]){
+      const v=src[lvl]?src[lvl][ep]:null;
+      if(v==null){html+=`<td style="background:#f2f0eb;color:#ccc">—</td>`;continue;}
+      const bg=heatColorP95(v,130);
+      const fg=textOnColor(v,130);
+      html+=`<td style="background:${bg};color:${fg}">${v}s</td>`;
+    }
+    html+='</tr>';
+  }
+  el.innerHTML=html+'</tbody>';
+})();
+
+// C3 median heatmap
+buildHeatmap('hm_c3_med',c3_median,[8,24,72,150,216,720],ENDPOINTS,heatColorP95,60,'s');
+
+// C3 requests heatmap
+buildHeatmap('hm_c3_reqs',c3_reqs,[8,24,72,150,216,720],ENDPOINTS,(v,mx)=>heatColorReqs(v,mx),420,'');
+
+// ── Endpoint detail tables ──
+const c3_full={
+  advertising_query:     {u8:{r:4,p95:22},u24:{r:21,p95:30},u72:{r:56,p95:43},u150:{r:76,p95:35},u216:{r:98,p95:45},u720:{r:67,p95:86}},
+  complex_query:         {u8:{r:4,p95:27},u24:{r:20,p95:25},u72:{r:31,p95:44},u150:{r:33,p95:33},u216:{r:53,p95:45},u720:{r:30,p95:92}},
+  create_thread_test:    {u8:{r:26,p95:30},u24:{r:85,p95:32},u72:{r:182,p95:46},u150:{r:255,p95:36},u216:{r:402,p95:43},u720:{r:235,p95:87}},
+  keyword_query:         {u8:{r:5,p95:24},u24:{r:24,p95:28},u72:{r:58,p95:46},u150:{r:65,p95:41},u216:{r:107,p95:40},u720:{r:64,p95:76}},
+  multi_turn_part1:      {u8:{r:11,p95:34},u24:{r:30,p95:22},u72:{r:67,p95:52},u150:{r:85,p95:30},u216:{r:103,p95:39},u720:{r:67,p95:80}},
+  multi_turn_part2:      {u8:{r:11,p95:34},u24:{r:24,p95:29},u72:{r:59,p95:51},u150:{r:77,p95:42},u216:{r:86,p95:40},u720:{r:29,p95:80}},
+  quick_question:        {u8:{r:3,p95:14},u24:{r:12,p95:26},u72:{r:28,p95:44},u150:{r:41,p95:30},u216:{r:52,p95:51},u720:{r:32,p95:87}},
+  sixqa_query:           {u8:{r:6,p95:30},u24:{r:32,p95:33},u72:{r:56,p95:30},u150:{r:75,p95:31},u216:{r:106,p95:32},u720:{r:74,p95:79}},
+  streaming_conversation:{u8:{r:37,p95:29},u24:{r:70,p95:25},u72:{r:179,p95:36},u150:{r:221,p95:30},u216:{r:313,p95:35},u720:{r:184,p95:79}},
+  streaming_followup_p1: {u8:{r:5,p95:20},u24:{r:26,p95:34},u72:{r:53,p95:47},u150:{r:64,p95:47},u216:{r:89,p95:42},u720:{r:59,p95:80}},
+  streaming_followup_p2: {u8:{r:5,p95:32},u24:{r:22,p95:29},u72:{r:49,p95:41},u150:{r:53,p95:36},u216:{r:79,p95:45},u720:{r:26,p95:79}},
+};
+const c2_full={
+  advertising_query:     {u8:{r:10,p95:37},u24:{r:22,p95:33},u72:{r:68,p95:37},u150:{r:76,p95:35},u216:{r:101,p95:45},u720:{r:85,p95:73}},
+  complex_query:         {u8:{r:2,p95:40},u24:{r:6,p95:44},u72:{r:37,p95:30},u150:{r:33,p95:33},u216:{r:63,p95:45},u720:{r:43,p95:69}},
+  create_thread_test:    {u8:{r:21,p95:43},u24:{r:64,p95:50},u72:{r:260,p95:29},u150:{r:255,p95:36},u216:{r:373,p95:47},u720:{r:287,p95:74}},
+  keyword_query:         {u8:{r:7,p95:23},u24:{r:19,p95:43},u72:{r:65,p95:32},u150:{r:65,p95:41},u216:{r:98,p95:37},u720:{r:75,p95:74}},
+  multi_turn_part1:      {u8:{r:9,p95:54},u24:{r:20,p95:66},u72:{r:82,p95:24},u150:{r:85,p95:30},u216:{r:83,p95:33},u720:{r:71,p95:67}},
+  multi_turn_part2:      {u8:{r:9,p95:21},u24:{r:18,p95:58},u72:{r:79,p95:36},u150:{r:77,p95:42},u216:{r:76,p95:42},u720:{r:35,p95:74}},
+  quick_question:        {u8:{r:3,p95:34},u24:{r:7,p95:60},u72:{r:43,p95:30},u150:{r:41,p95:30},u216:{r:53,p95:50},u720:{r:35,p95:80}},
+  sixqa_query:           {u8:{r:6,p95:42},u24:{r:18,p95:24},u72:{r:76,p95:24},u150:{r:75,p95:31},u216:{r:119,p95:37},u720:{r:78,p95:71}},
+  streaming_conversation:{u8:{r:27,p95:40},u24:{r:48,p95:25},u72:{r:237,p95:26},u150:{r:221,p95:30},u216:{r:295,p95:37},u720:{r:211,p95:69}},
+  streaming_followup_p1: {u8:{r:9,p95:22},u24:{r:16,p95:47},u72:{r:64,p95:30},u150:{r:64,p95:47},u216:{r:90,p95:52},u720:{r:75,p95:72}},
+  streaming_followup_p2: {u8:{r:9,p95:32},u24:{r:13,p95:96},u72:{r:58,p95:26},u150:{r:53,p95:36},u216:{r:81,p95:47},u720:{r:42,p95:74}},
 };
 
-function buildTable(container,eps,color){
-  container.innerHTML=`<table>
-    <thead>
-      <tr><th>Endpoint</th><th class="num" colspan="2">8 users</th><th class="num" colspan="2">24 users</th><th class="num" colspan="2">72 users</th><th class="num" colspan="2">216 users</th></tr>
-      <tr><th></th><th class="num" style="color:var(--ink3)">reqs</th><th class="num" style="color:var(--ink3)">p95</th><th class="num" style="color:var(--ink3)">reqs</th><th class="num" style="color:var(--ink3)">p95</th><th class="num" style="color:var(--ink3)">reqs</th><th class="num" style="color:var(--ink3)">p95</th><th class="num" style="color:var(--ink3)">reqs</th><th class="num" style="color:var(--ink3)">p95</th></tr>
-    </thead>
-    <tbody>${eps.map(e=>`<tr>
-      <td style="color:${color};font-weight:500">${e.name}</td>
-      <td class="num">${e.u8.r}</td><td class="num">${e.u8.p95>=5000?(e.u8.p95/1000).toFixed(0)+'s':e.u8.p95+'ms'}</td>
-      <td class="num">${e.u24.r}</td><td class="num">${e.u24.p95>=5000?(e.u24.p95/1000).toFixed(0)+'s':e.u24.p95+'ms'}</td>
-      <td class="num">${e.u72.r}</td><td class="num">${e.u72.p95>=5000?(e.u72.p95/1000).toFixed(0)+'s':e.u72.p95+'ms'}</td>
-      <td class="num">${e.u216.r}</td><td class="num">${e.u216.p95>=5000?(e.u216.p95/1000).toFixed(0)+'s':e.u216.p95+'ms'}</td>
-    </tr>`).join('')}</tbody>
-  </table>`;
+function buildEpTable(containerId,data,color){
+  const keys=Object.keys(data);
+  let html=`<table><thead>
+    <tr><th>Endpoint</th><th class="num" colspan="2">8u</th><th class="num" colspan="2">24u</th><th class="num" colspan="2">72u</th><th class="num" colspan="2">150u</th><th class="num" colspan="2">216u</th><th class="num" colspan="2">720u</th></tr>
+    <tr><th></th><th class="num" style="color:var(--ink3)">reqs</th><th class="num" style="color:var(--ink3)">p95</th><th class="num" style="color:var(--ink3)">reqs</th><th class="num" style="color:var(--ink3)">p95</th><th class="num" style="color:var(--ink3)">reqs</th><th class="num" style="color:var(--ink3)">p95</th><th class="num" style="color:var(--ink3)">reqs</th><th class="num" style="color:var(--ink3)">p95</th><th class="num" style="color:var(--ink3)">reqs</th><th class="num" style="color:var(--ink3)">p95</th><th class="num" style="color:var(--ink3)">reqs</th><th class="num" style="color:var(--ink3)">p95</th></tr>
+    </thead><tbody>`;
+  for(const ep of keys){
+    const d=data[ep];
+    html+=`<tr>
+      <td style="color:${color};font-weight:500">${ep.replace(/_/g,' ')}</td>
+      <td class="num">${d.u8.r}</td><td class="num">${d.u8.p95}s</td>
+      <td class="num">${d.u24.r}</td><td class="num">${d.u24.p95}s</td>
+      <td class="num">${d.u72.r}</td><td class="num">${d.u72.p95}s</td>
+      <td class="num">${d.u150.r}</td><td class="num">${d.u150.p95}s</td>
+      <td class="num">${d.u216.r}</td><td class="num">${d.u216.p95}s</td>
+      <td class="num">${d.u720.r}</td><td class="num">${d.u720.p95}s</td>
+    </tr>`;
+  }
+  document.getElementById(containerId).innerHTML=html+'</tbody></table>';
 }
-buildTable(document.getElementById('c1tab'),epData.c1,C1);
-buildTable(document.getElementById('c2tab'),epData.c2,C2);
-buildTable(document.getElementById('c3tab'),epData.c3,C3);
+buildEpTable('tc3',c3_full,C3);
+buildEpTable('tc2',c2_full,C2);
 
-function switchSection(id,btn){
-  document.querySelectorAll('.section-panel').forEach(p=>p.classList.remove('active'));
-  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+// Nav switching
+function sw(id,btn){
+  document.querySelectorAll('.sp').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nbtn').forEach(b=>b.classList.remove('active'));
   document.getElementById(id).classList.add('active');
   btn.classList.add('active');
 }
-function switchTab(id,btn){
-  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
-  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+function st(id,btn){
+  document.querySelectorAll('.tpanel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tbtn').forEach(b=>b.classList.remove('active'));
   document.getElementById(id).classList.add('active');
   btn.classList.add('active');
 }
